@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Netlify Functions - Notion Integration</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        background: #f8f9fa;
+        padding: 30px;
+        border-radius: 8px;
+        border-left: 4px solid #00ad9f;
+      }
+      .status {
+        background: #d4edda;
+        color: #155724;
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+      .endpoint {
+        background: #e2e3e5;
+        padding: 10px;
+        border-radius: 4px;
+        font-family: monospace;
+        margin: 10px 0;
+      }
+      h1 {
+        color: #00ad9f;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🚀 Netlify Functions Deployed Successfully!</h1>
+
+      <div class="status">
+        <strong>✅ Status:</strong> Functions are running and ready to use
+      </div>
+
+      <h2>Available Functions</h2>
+      <ul>
+        <li>
+          <strong>submit-to-notion</strong> - Handles project request
+          submissions to Notion
+          <div class="endpoint">POST /.netlify/functions/submit-to-notion</div>
+        </li>
+      </ul>
+
+      <h2>Testing</h2>
+      <p>You can test the function using curl:</p>
+      <div class="endpoint">
+        curl -X POST
+        https://your-site.netlify.app/.netlify/functions/submit-to-notion \ -H
+        "Content-Type: application/json" \ -d
+        '{"name":"Test","email":"test@example.com","details":"Test","service":"website","budget":"1000-5000"}'
+      </div>
+
+      <h2>Configuration</h2>
+      <p>
+        Make sure to set these environment variables in your Netlify dashboard:
+      </p>
+      <ul>
+        <li>
+          <code>VITE_NOTION_API_KEY</code> - Your Notion integration token
+        </li>
+        <li><code>VITE_NOTION_DATABASE_ID</code> - Your Notion database ID</li>
+      </ul>
+
+      <p>
+        <em
+          >This site is for Netlify functions only. Your main VuePress site is
+          deployed on GitHub Pages.</em
+        >
+      </p>
+    </div>
+  </body>
+</html>
