@@ -5,8 +5,7 @@
 [functions]
   directory = "netlify/functions"
 
-[[functions]]
-  function = "check-status-changes"
+[functions."check-status-changes"]
   schedule = "@every 15m"
 
 [[headers]]
