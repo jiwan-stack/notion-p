@@ -5,6 +5,11 @@
 [functions]
   directory = "netlify/functions"
 
+# Scheduled function for status change notifications
+[[functions]]
+  function = "check-status-changes"
+  schedule = "@every 15m"
+
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
