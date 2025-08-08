@@ -84,7 +84,7 @@ const getDatabasePages = async (databaseId, notionApiKey) => {
         },
       }
     );
-
+    console.log(response.data.results);
     return response.data.results || [];
   } catch (error) {
     console.error("Failed to fetch database pages:", error.message);
