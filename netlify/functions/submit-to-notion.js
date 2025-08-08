@@ -69,6 +69,38 @@ exports.handler = async (event) => {
       }
     }
 
+    // Auto-inject default parent.database_id for creating pages when not provided
+    if (
+      requestContentType.includes("application/json") &&
+      method === "POST" &&
+      path === "/v1/pages"
+    ) {
+      const hasParentFromClient =
+        data &&
+        typeof data === "object" &&
+        data.parent &&
+        (data.parent.database_id || data.parent.page_id);
+
+      if (!hasParentFromClient) {
+        const defaultDatabaseId = process.env.VITE_NOTION_DATABASE_ID;
+        if (!defaultDatabaseId) {
+          return {
+            statusCode: 400,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              error:
+                "Missing parent in request and VITE_NOTION_DATABASE_ID is not set on server",
+            }),
+          };
+        }
+        if (!data || typeof data !== "object") data = {};
+        data.parent = {
+          ...(data.parent || {}),
+          database_id: defaultDatabaseId,
+        };
+      }
+    }
+
     const { path: _omitPath, version: _omitVersion, ...restParams } = query;
 
     const response = await axios({
