@@ -9,5 +9,6 @@
   for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Headers = "Content-Type, Notion-Version"
+    Access-Control-Allow-Headers = "Content-Type, Notion-Version, Authorization, X-Requested-With"
     Access-Control-Allow-Methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+    Access-Control-Max-Age = "86400"

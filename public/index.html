@@ -42,47 +42,218 @@
   </head>
   <body>
     <div class="container">
-      <h1>🚀 Netlify Functions Deployed Successfully!</h1>
-
-      <div class="status">
-        <strong>✅ Status:</strong> Functions are running and ready to use
-      </div>
-
-      <h2>Available Functions</h2>
-      <ul>
-        <li>
-          <strong>submit-to-notion</strong> - Handles project request
-          submissions to Notion
-          <div class="endpoint">POST /.netlify/functions/submit-to-notion</div>
-        </li>
-      </ul>
-
-      <h2>Testing</h2>
-      <p>You can test the function using curl:</p>
-      <div class="endpoint">
-        curl -X POST
-        https://your-site.netlify.app/.netlify/functions/submit-to-notion \ -H
-        "Content-Type: application/json" \ -d
-        '{"name":"Test","email":"test@example.com","details":"Test","service":"website","budget":"1000-5000"}'
-      </div>
-
-      <h2>Configuration</h2>
-      <p>
-        Make sure to set these environment variables in your Netlify dashboard:
-      </p>
-      <ul>
-        <li>
-          <code>VITE_NOTION_API_KEY</code> - Your Notion integration token
-        </li>
-        <li><code>VITE_NOTION_DATABASE_ID</code> - Your Notion database ID</li>
-      </ul>
-
-      <p>
-        <em
-          >This site is for Netlify functions only. Your main VuePress site is
-          deployed on GitHub Pages.</em
-        >
-      </p>
+      <h1>Service Request</h1>
+      <form id="service-form">
+        <div>
+          <label for="name"><strong>Name</strong></label
+          ><br />
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            placeholder="Your full name"
+            style="width: 100%; padding: 8px; margin-top: 6px"
+          />
+        </div>
+        <div style="margin-top: 12px">
+          <label for="email"><strong>Email</strong></label
+          ><br />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            placeholder="you@example.com"
+            style="width: 100%; padding: 8px; margin-top: 6px"
+          />
+        </div>
+        <div style="margin-top: 12px">
+          <label for="service"><strong>Service</strong></label
+          ><br />
+          <select
+            id="service"
+            name="service"
+            required
+            style="width: 100%; padding: 8px; margin-top: 6px"
+          >
+            <option value="" disabled selected>Select a service</option>
+            <option value="Website Development">Website Development</option>
+            <option value="E-commerce">E-commerce</option>
+            <option value="API Integration">API Integration</option>
+            <option value="Consulting">Consulting</option>
+            <option value="UI/UX Design">UI/UX Design</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+        <div style="margin-top: 12px">
+          <label for="budget"><strong>Budget</strong></label
+          ><br />
+          <select
+            id="budget"
+            name="budget"
+            required
+            style="width: 100%; padding: 8px; margin-top: 6px"
+          >
+            <option value="" disabled selected>Select a budget</option>
+            <option value="<100">Under $1,00</option>
+            <option value="100-500">$1,00 - $5,00</option>
+            <option value="500-1000">$5,00 - $10,00</option>
+            <option value=">1000">Over $10,00</option>
+          </select>
+        </div>
+        <div style="margin-top: 12px">
+          <label for="details"><strong>Project Details</strong></label
+          ><br />
+          <textarea
+            id="details"
+            name="details"
+            required
+            placeholder="Tell us about your project"
+            rows="5"
+            style="width: 100%; padding: 8px; margin-top: 6px"
+          ></textarea>
+        </div>
+        <div style="margin-top: 16px">
+          <button
+            id="submitBtn"
+            type="submit"
+            style="
+              background: #00ad9f;
+              color: #fff;
+              border: none;
+              padding: 10px 16px;
+              border-radius: 4px;
+              cursor: pointer;
+            "
+          >
+            Submit Request
+          </button>
+        </div>
+      </form>
+      <div id="result" class="status" style="display: none"></div>
     </div>
+
+    <script>
+      const form = document.getElementById("service-form");
+      const resultEl = document.getElementById("result");
+      const submitBtn = document.getElementById("submitBtn");
+
+      function showResult(message, ok) {
+        resultEl.style.display = "block";
+        resultEl.style.background = ok ? "#d4edda" : "#f8d7da";
+        resultEl.style.color = ok ? "#155724" : "#721c24";
+        resultEl.textContent = message;
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        showResult("Submitting…", true);
+
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const service = document.getElementById("service").value;
+        const budget = document.getElementById("budget").value;
+        const details = document.getElementById("details").value.trim();
+
+        const now = new Date();
+        const dateReceived = now.toISOString().split("T")[0];
+        const followUp = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+
+        const body = {
+          // parent is omitted to allow server to inject VITE_NOTION_DATABASE_ID
+          properties: {
+            // Title column
+            "Client Name": {
+              title: [
+                {
+                  text: { content: name },
+                },
+              ],
+            },
+            // Email column
+            Email: { email },
+            // Rich text column
+            "Project Details": {
+              rich_text: [
+                {
+                  text: { content: details },
+                },
+              ],
+            },
+            // Select columns
+            "Service Type": {
+              select: { name: service },
+            },
+            "Budget Range": {
+              select: { name: budget },
+            },
+            // Status (status-type)
+            Status: {
+              status: { name: "New" },
+            },
+            // Date columns
+            "Date Received": {
+              date: { start: dateReceived },
+            },
+            "Follow-up Date": {
+              date: { start: followUp },
+            },
+          },
+        };
+
+        try {
+          const res = await fetch(
+            "https://notion-p.netlify.app/.netlify/functions/submit-to-notion?path=/v1/pages",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(body),
+            }
+          );
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText };
+            }
+            throw new Error(
+              errorData.error ||
+                errorData.message ||
+                `HTTP ${res.status}: ${res.statusText}`
+            );
+          }
+
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { raw: text };
+          }
+
+          if (data.error) {
+            throw new Error(data.error);
+          }
+
+          showResult("Request submitted successfully!", true);
+          form.reset();
+        } catch (err) {
+          console.error("Submission error:", err);
+          showResult(`Error: ${err.message}`, false);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
   </body>
 </html>

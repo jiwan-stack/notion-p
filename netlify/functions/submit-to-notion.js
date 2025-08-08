@@ -14,12 +14,19 @@ const getHeader = (headers, name) => {
 exports.handler = async (event) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type, Notion-Version",
+    "Access-Control-Allow-Headers":
+      "Content-Type, Notion-Version, Authorization, X-Requested-With",
     "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+    "Access-Control-Max-Age": "86400",
   };
 
+  // Handle preflight requests
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: "",
+    };
   }
 
   const notionApiKey = process.env.VITE_NOTION_API_KEY;
