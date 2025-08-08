@@ -5,8 +5,10 @@
 [functions]
   directory = "netlify/functions"
 
-[functions."check-status-changes"]
-  schedule = "@every 15m"
+[functions]
+  [functions.check-status-changes]
+  schedule = "5 4 * * *"
+
 
 [[headers]]
   for = "/.netlify/functions/*"
