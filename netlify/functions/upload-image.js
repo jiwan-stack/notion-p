@@ -1,32 +1,46 @@
-import Busboy from "busboy";
-import fs from "fs";
-import path from "path";
+const fs = require("fs");
+const path = require("path");
+const Busboy = require("busboy");
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") {
-    return res.status(405).send({ error: "Method not allowed" });
+exports.handler = async function (event) {
+  if (event.httpMethod !== "POST") {
+    return { statusCode: 405, body: "Method Not Allowed" };
   }
 
-  // Save in public/uploads
-  const uploadsDir = path.join(process.cwd(), "public", "uploads");
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
+  return new Promise((resolve, reject) => {
+    const busboy = Busboy({ headers: event.headers });
 
-  const files = [];
+    const uploadsDir = path.join(__dirname, "../../public/uploads");
 
-  const busboy = Busboy({ headers: req.headers });
+    // Ensure uploads dir exists
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+    }
 
-  busboy.on("file", (fieldname, file, filename) => {
-    const savePath = path.join(uploadsDir, filename);
-    const writeStream = fs.createWriteStream(savePath);
-    file.pipe(writeStream);
-    files.push(filename);
+    let fileUrls = [];
+
+    busboy.on("file", (fieldname, file, filename) => {
+      const saveTo = path.join(uploadsDir, filename);
+      const writeStream = fs.createWriteStream(saveTo);
+
+      file.pipe(writeStream);
+
+      writeStream.on("close", () => {
+        // Return the public URL (relative to Netlify)
+        const publicUrl = `/uploads/${filename}`;
+        fileUrls.push(publicUrl);
+      });
+    });
+
+    busboy.on("finish", () => {
+      resolve({
+        statusCode: 200,
+        body: JSON.stringify({ urls: fileUrls }),
+      });
+    });
+
+    busboy.on("error", reject);
+
+    busboy.end(event.body, event.isBase64Encoded ? "base64" : "utf8");
   });
-
-  busboy.on("finish", () => {
-    res.status(200).json({ message: "Files uploaded", files });
-  });
-
-  req.pipe(busboy);
-}
+};
