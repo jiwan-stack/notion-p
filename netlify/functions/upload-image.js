@@ -1,33 +1,29 @@
-const fs = require("fs");
-const path = require("path");
-const Busboy = require("busboy");
+import Busboy from "busboy";
+import { put } from "@netlify/blobs";
 
-exports.handler = async function (event) {
+export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: "Method Not Allowed" };
   }
 
   return new Promise((resolve, reject) => {
     const busboy = Busboy({ headers: event.headers });
+    const fileUrls = [];
 
-    const uploadsDir = path.join(__dirname, "../../public/uploads");
+    busboy.on("file", async (fieldname, file, filename) => {
+      const chunks = [];
+      file.on("data", (chunk) => chunks.push(chunk));
 
-    // Ensure uploads dir exists
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+      file.on("end", async () => {
+        const buffer = Buffer.concat(chunks);
 
-    let fileUrls = [];
+        // Store in Netlify Blob storage
+        await put(`uploads/${filename}`, buffer, {
+          contentType: "application/octet-stream", // change if you know actual type
+          access: "public", // makes it accessible via public URL
+        });
 
-    busboy.on("file", (fieldname, file, filename) => {
-      const saveTo = path.join(uploadsDir, filename);
-      const writeStream = fs.createWriteStream(saveTo);
-
-      file.pipe(writeStream);
-
-      writeStream.on("close", () => {
-        // Return the public URL (relative to Netlify)
-        const publicUrl = `/uploads/${filename}`;
+        const publicUrl = `${process.env.URL}/.netlify/blobs/uploads/${filename}`;
         fileUrls.push(publicUrl);
       });
     });
