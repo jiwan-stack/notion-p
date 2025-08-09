@@ -171,10 +171,59 @@ export const handler = async (event) => {
         // Instead of using /v1/files (which is for Direct Upload),
         // we'll create a page with the file attached using the public URL
         // This is the correct way according to Notion's documentation
+
+        // First, let's try to get the database schema to see what properties exist
+        console.log(
+          `Getting database schema for: ${process.env.VITE_NOTION_DATABASE_ID}`
+        );
+
+        const dbResponse = await fetch(
+          `https://api.notion.com/v1/databases/${process.env.VITE_NOTION_DATABASE_ID}`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${notionApiKey}`,
+              "Notion-Version": "2022-06-28",
+            },
+          }
+        );
+
+        if (!dbResponse.ok) {
+          console.error(
+            `Failed to get database schema: ${dbResponse.status} ${dbResponse.statusText}`
+          );
+          throw new Error(
+            `Failed to get database schema: ${dbResponse.status}`
+          );
+        }
+
+        const dbData = await dbResponse.json();
+        console.log(`Database properties:`, Object.keys(dbData.properties));
+
+        // Find the first title property and files property
+        const titleProperty = Object.keys(dbData.properties).find(
+          (key) => dbData.properties[key].type === "title"
+        );
+
+        const filesProperty = Object.keys(dbData.properties).find(
+          (key) => dbData.properties[key].type === "files"
+        );
+
+        if (!titleProperty) {
+          throw new Error("No title property found in database");
+        }
+
+        console.log(
+          `Using title property: ${titleProperty}, files property: ${
+            filesProperty || "none"
+          }`
+        );
+
+        // Create the request body with the actual property names from the database
         const requestBody = {
           parent: { database_id: process.env.VITE_NOTION_DATABASE_ID },
           properties: {
-            Name: {
+            [titleProperty]: {
               title: [
                 {
                   text: {
@@ -183,20 +232,27 @@ export const handler = async (event) => {
                 },
               ],
             },
-            // Add file to the page
-            Files: {
-              files: [
-                {
-                  name: fileName,
-                  type: "external",
-                  external: {
-                    url: publicUrl,
-                  },
-                },
-              ],
-            },
           },
         };
+
+        // Only add files property if it exists
+        if (filesProperty) {
+          requestBody.properties[filesProperty] = {
+            files: [
+              {
+                name: fileName,
+                type: "external",
+                external: {
+                  url: publicUrl,
+                },
+              },
+            ],
+          };
+        } else {
+          console.log(
+            `No files property found, file will be accessible via URL: ${publicUrl}`
+          );
+        }
 
         console.log(
           `Full Notion API request body:`,
