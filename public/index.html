@@ -464,30 +464,15 @@
           updateProgress(100);
 
           // Return the Notion file objects for database integration
-          // Since we're now creating pages with file attachments, we need to extract
-          // the file information from the page response
-          return data.uploadedFiles.map((file) => {
-            // Extract file info from the created page
-            const page = file.notionPage;
-            const filesProperty = page.properties?.Files?.files?.[0];
-
-            if (filesProperty && filesProperty.external) {
-              return {
-                name: file.fileName,
-                type: "external",
-                external: {
-                  url: filesProperty.external.url,
-                },
-              };
+          // The upload function now returns an external file object per file
+          return data.uploadedFiles.map((f) => {
+            if (f.fileForNotion && f.fileForNotion.external?.url) {
+              return f.fileForNotion;
             }
-
-            // Fallback if file structure is different
             return {
-              name: file.fileName,
+              name: f.fileName,
               type: "external",
-              external: {
-                url: file.notionPage.url || "", // Use page URL as fallback
-              },
+              external: { url: f.publicUrl || "" },
             };
           });
         } catch (error) {
