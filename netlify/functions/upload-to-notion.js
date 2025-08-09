@@ -152,8 +152,8 @@ export const handler = async (event) => {
           process.env.DEPLOY_URL ||
           "https://notion-p.netlify.app";
 
-        // For Netlify Blobs, the URL structure is: /api/blobs/{store-name}/{key}
-        const publicUrl = `${baseUrl}/api/blobs/temp-uploads/${uniqueFileName}`;
+        // Use our custom endpoint to serve the file publicly
+        const publicUrl = `${baseUrl}/.netlify/functions/serve-blob/${uniqueFileName}`;
         console.log(`File ${fileName} temporary URL:`, publicUrl);
 
         // Set expiry time to 24 hours from now
