@@ -37,6 +37,16 @@ export const handler = async (event) => {
   try {
     const { files, clientDatabaseId } = JSON.parse(event.body);
 
+    // Choose database ID: prefer client-provided, else env var
+    const databaseId = clientDatabaseId || process.env.VITE_NOTION_DATABASE_ID;
+    if (!databaseId) {
+      return {
+        statusCode: 400,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "No Notion database ID provided" }),
+      };
+    }
+
     if (!files || !Array.isArray(files) || files.length === 0) {
       return {
         statusCode: 400,
@@ -173,10 +183,10 @@ export const handler = async (event) => {
         // This is the correct way according to Notion's documentation
 
         // First, let's try to get the database schema to see what properties exist
-        console.log(`Getting database schema for: ${clientDatabaseId}`);
+        console.log(`Getting database schema for: ${databaseId}`);
 
         const dbResponse = await fetch(
-          `https://api.notion.com/v1/databases/${clientDatabaseId}`,
+          `https://api.notion.com/v1/databases/${databaseId}`,
           {
             method: "GET",
             headers: {
@@ -187,11 +197,12 @@ export const handler = async (event) => {
         );
 
         if (!dbResponse.ok) {
+          const errorText = await dbResponse.text();
           console.error(
-            `Failed to get database schema: ${dbResponse.status} ${dbResponse.statusText}`
+            `Failed to get database schema: ${dbResponse.status} ${dbResponse.statusText} - ${errorText}`
           );
           throw new Error(
-            `Failed to get database schema: ${dbResponse.status}`
+            `Failed to get database schema: ${dbResponse.status} - ${errorText}`
           );
         }
 
@@ -219,7 +230,7 @@ export const handler = async (event) => {
 
         // Create the request body with the actual property names from the database
         const requestBody = {
-          parent: { database_id: clientDatabaseId },
+          parent: { database_id: databaseId },
           properties: {
             [titleProperty]: {
               title: [
