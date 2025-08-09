@@ -1,6 +1,7 @@
 import { getStore } from "@netlify/blobs";
 
 // Use native fetch instead of axios to avoid module compatibility issues
+// Note: This function now requires NETLIFY_BLOBS_CONTEXT environment variable
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -110,7 +111,20 @@ export const handler = async (event) => {
         console.log(`File ${fileName} unique name: ${uniqueFileName}`);
 
         // Store file temporarily in Netlify Blobs
-        const store = getStore("temp-uploads");
+        // Parse the NETLIFY_BLOBS_CONTEXT environment variable
+        const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
+        if (!blobsContext) {
+          throw new Error(
+            "NETLIFY_BLOBS_CONTEXT environment variable is required"
+          );
+        }
+
+        const store = getStore("temp-uploads", {
+          siteID: JSON.parse(Buffer.from(blobsContext, "base64").toString())
+            .siteID,
+          token: JSON.parse(Buffer.from(blobsContext, "base64").toString())
+            .token,
+        });
 
         try {
           console.log(`Storing file ${fileName} in Netlify Blobs...`);

@@ -7,4 +7,5 @@ build/
 coverage/
 # Local Netlify folder
 .netlify
+.env
 .env.example
