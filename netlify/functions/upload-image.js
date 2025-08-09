@@ -1,5 +1,5 @@
 import Busboy from "busboy";
-import { put } from "@netlify/blobs";
+import { getStore } from "@netlify/blobs";
 
 export const handler = async (event) => {
   if (event.httpMethod !== "POST") {
@@ -10,19 +10,23 @@ export const handler = async (event) => {
     const busboy = Busboy({ headers: event.headers });
     const fileUrls = [];
 
-    busboy.on("file", async (fieldname, file, filename) => {
+    busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
       const chunks = [];
       file.on("data", (chunk) => chunks.push(chunk));
 
       file.on("end", async () => {
         const buffer = Buffer.concat(chunks);
 
-        // Store in Netlify Blob storage
-        await put(`uploads/${filename}`, buffer, {
-          contentType: "application/octet-stream", // change if you know actual type
-          access: "public", // makes it accessible via public URL
+        // Create or get the "uploads" store
+        const store = getStore("uploads");
+
+        // Store file publicly
+        await store.set(filename, buffer, {
+          contentType: mimetype,
+          access: "public",
         });
 
+        // Construct public URL
         const publicUrl = `${process.env.URL}/.netlify/blobs/uploads/${filename}`;
         fileUrls.push(publicUrl);
       });
