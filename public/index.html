@@ -4,245 +4,228 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Warranty Service Request</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
       body {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
           sans-serif;
-        max-width: 600px;
         margin: 50px auto;
         padding: 20px;
         line-height: 1.6;
         color: #333;
       }
-      .container {
-        background: #f8f9fa;
-        padding: 30px;
-        border-radius: 8px;
-        border-left: 4px solid #007bff;
-      }
-      .status {
-        padding: 15px;
-        border-radius: 4px;
-        margin: 20px 0;
-      }
-      h1 {
-        color: #007bff;
-      }
-      label {
-        font-weight: bold;
-      }
-      input,
-      select,
-      textarea {
-        width: 100%;
-        padding: 8px;
-        margin-top: 6px;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-      }
-      button {
-        background: #007bff;
-        color: #fff;
-        border: none;
-        padding: 10px 16px;
-        border-radius: 4px;
-        cursor: pointer;
-      }
-      button:disabled {
-        background: #6c757d;
-        cursor: not-allowed;
-      }
-      .file-info {
-        background: #e9ecef;
-        padding: 10px;
-        border-radius: 4px;
-        margin: 10px 0;
-        font-size: 14px;
-      }
-      .file-error {
-        background: #f8d7da;
-        color: #721c24;
-        border: 1px solid #f5c6cb;
-      }
-      .file-success {
-        background: #d4edda;
-        color: #155724;
-        border: 1px solid #c3e6cb;
-      }
-      .upload-progress {
-        width: 100%;
-        height: 20px;
-        background: #e9ecef;
-        border-radius: 10px;
-        overflow: hidden;
-        margin: 10px 0;
-      }
-      .progress-bar {
-        height: 100%;
-        background: #007bff;
-        width: 0%;
-        transition: width 0.3s ease;
-      }
-      .file-preview {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        margin: 10px 0;
-      }
-      .file-preview img {
-        width: 80px;
-        height: 80px;
-        object-fit: cover;
-        border-radius: 4px;
-        border: 2px solid #dee2e6;
-      }
-      .file-remove {
-        position: absolute;
-        top: -5px;
-        right: -5px;
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        font-size: 12px;
-      }
-      .file-item {
-        position: relative;
-      }
-      .help-text {
-        font-size: 12px;
-        color: #6c757d;
-        margin-top: 4px;
-      }
-      .error-text {
-        color: #dc3545;
-        font-size: 12px;
-        margin-top: 4px;
-      }
     </style>
   </head>
   <body>
-    <div class="container">
-      <h1>Warranty Service Request</h1>
+    <img
+      src="/stackseekers.jpeg"
+      alt="Stackseekers Cover"
+      class="w-full max-w-3xl mx-auto rounded-lg shadow mb-8 block"
+    />
+    <div class="mx-auto bg-gray-50 p-8 rounded-lg border-l-4 border-blue-500">
+      <h1 class="text-2xl font-bold text-blue-600">Warranty Service Request</h1>
       <form id="service-form">
-        <div>
-          <label for="name">Full Name</label>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            placeholder="Your full name"
-          />
-        </div>
-
-        <div style="margin-top: 12px">
-          <label for="email">Email</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="you@example.com"
-          />
-        </div>
-
-        <div style="margin-top: 12px">
-          <label for="product">Product Name</label>
-          <input
-            id="product"
-            name="product"
-            type="text"
-            required
-            placeholder="e.g. Washing Machine Model X"
-          />
-        </div>
-
-        <div style="margin-top: 12px">
-          <label for="serial">Serial Number</label>
-          <input
-            id="serial"
-            name="serial"
-            type="text"
-            required
-            placeholder="e.g. SN12345678"
-          />
-        </div>
-
-        <div style="margin-top: 12px">
-          <label for="purchaseDate">Purchase Date</label>
-          <input id="purchaseDate" name="purchaseDate" type="date" required />
-        </div>
-
-        <div style="margin-top: 12px">
-          <label for="service">Issue Type</label>
-          <select id="service" name="service" required>
-            <option value="" disabled selected>Select issue</option>
-            <option value="Won't Turn On">Won't Turn On</option>
-            <option value="Makes Strange Noise">Makes Strange Noise</option>
-            <option value="Physical Damage">Physical Damage</option>
-            <option value="Software Problem">Software Problem</option>
-            <option value="Missing Parts">Missing Parts</option>
-            <option value="Product Leaking">Product Leaking</option>
-            <option value="Display Issues">Display Issues</option>
-            <option value="Connection Problems">Connection Problems</option>
-            <option value="Battery Problems">Battery Problems</option>
-            <option value="Broken Accessory">Broken Accessory</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-
-        <div style="margin-top: 12px">
-          <label for="details">Issue Details</label>
-          <textarea
-            id="details"
-            name="details"
-            required
-            placeholder="Describe the problem"
-            rows="5"
-          ></textarea>
-        </div>
-
-        <!-- Enhanced image upload section -->
-        <div style="margin-top: 12px">
-          <label for="image">Upload Images</label>
-          <input
-            id="image"
-            name="image"
-            type="file"
-            accept="image/*"
-            capture="environment"
-            multiple
-            aria-describedby="image-help image-error"
-          />
-          <div id="image-help" class="help-text">
-            Supported formats: JPG, PNG, GIF, WebP, SVG. Max file size: 5MB. Max
-            files: 10. Images are uploaded directly to Notion.
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div>
+            <h3 class="mt-6 text-lg font-semibold">Product Details</h3>
+            <div style="margin-top: 12px">
+              <label
+                for="product"
+                class="block text-sm font-medium text-gray-700"
+                >Product Name</label
+              >
+              <input
+                id="product"
+                name="product"
+                type="text"
+                required
+                placeholder="e.g. Washing Machine Model X"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div style="margin-top: 12px">
+              <label
+                for="serial"
+                class="block text-sm font-medium text-gray-700"
+                >Serial Number</label
+              >
+              <input
+                id="serial"
+                name="serial"
+                type="text"
+                required
+                placeholder="e.g. SN12345678"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div style="margin-top: 12px">
+              <label
+                for="purchaseDate"
+                class="block text-sm font-medium text-gray-700"
+                >Purchase Date</label
+              >
+              <input
+                id="purchaseDate"
+                name="purchaseDate"
+                type="date"
+                required
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
           </div>
-          <div id="image-error" class="error-text" style="display: none"></div>
-
-          <!-- File preview area -->
-          <div
-            id="file-preview"
-            class="file-preview"
-            style="display: none"
-          ></div>
-
-          <!-- Upload progress -->
-          <div
-            id="upload-progress"
-            class="upload-progress"
-            style="display: none"
+          <div>
+            <h3 class="mt-6 text-lg font-semibold">Product Symptom</h3>
+            <div style="margin-top: 12px">
+              <label
+                for="service"
+                class="block text-sm font-medium text-gray-700"
+                >Issue Type</label
+              >
+              <select
+                id="service"
+                name="service"
+                required
+                class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="" disabled selected>Select issue</option>
+                <option value="Won't Turn On">Won't Turn On</option>
+                <option value="Makes Strange Noise">Makes Strange Noise</option>
+                <option value="Physical Damage">Physical Damage</option>
+                <option value="Software Problem">Software Problem</option>
+                <option value="Missing Parts">Missing Parts</option>
+                <option value="Product Leaking">Product Leaking</option>
+                <option value="Display Issues">Display Issues</option>
+                <option value="Connection Problems">Connection Problems</option>
+                <option value="Battery Problems">Battery Problems</option>
+                <option value="Broken Accessory">Broken Accessory</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div style="margin-top: 12px">
+              <label
+                for="details"
+                class="block text-sm font-medium text-gray-700"
+                >Issue Details</label
+              >
+              <textarea
+                id="details"
+                name="details"
+                required
+                placeholder="Describe the problem"
+                rows="2"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              ></textarea>
+            </div>
+            <!-- Enhanced drag-and-drop image upload section -->
+            <div style="margin-top: 12px">
+              <label
+                for="image"
+                class="block text-sm font-medium text-gray-700"
+              >
+                Upload Images
+              </label>
+              <!-- Drop Zone -->
+              <div
+                id="drop-zone"
+                class="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition"
+              >
+                <p class="text-gray-500 text-sm">
+                  Drag & drop your images here
+                </p>
+                <p class="text-gray-400 text-xs">or click to select</p>
+                <input
+                  id="image"
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  multiple
+                  aria-describedby="image-help image-error"
+                  class="hidden"
+                />
+              </div>
+              <div id="image-help" class="text-sm text-gray-500 mt-2">
+                Supported formats: JPG, PNG, GIF, WebP, SVG. Max file size: 5MB.
+                Max files: 10. Images are uploaded directly to Notion.
+              </div>
+              <!-- Error text -->
+              <div
+                id="image-error"
+                class="error-text text-red-500 text-sm mt-1"
+                style="display: none"
+              ></div>
+              <!-- File preview area -->
+              <div
+                id="file-preview"
+                class="file-preview grid grid-cols-4 gap-2 mt-4"
+                style="display: none"
+              ></div>
+              <!-- Upload progress -->
+              <div
+                id="upload-progress"
+                class="upload-progress mt-3 w-full bg-gray-200 rounded-full h-2.5"
+                style="display: none"
+              >
+                <div
+                  class="progress-bar bg-blue-600 h-2.5 rounded-full"
+                  id="progress-bar"
+                  style="width: 0%"
+                ></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <h3 class="mt-6 text-lg font-semibold">Engineer Schedule</h3>
+            <div style="margin-top: 12px">
+              <label
+                for="engineerDate"
+                class="block text-sm font-medium text-gray-700"
+                >Choose a preferable date for scheduling Engineer visit</label
+              >
+              <input
+                id="engineerDate"
+                name="engineerDate"
+                type="date"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <h3 class="mt-6 text-lg font-semibold">Contact Information</h3>
+            <div>
+              <label for="name" class="block text-sm font-medium text-gray-700"
+                >Full Name</label
+              >
+              <input
+                id="name"
+                name="name"
+                type="text"
+                required
+                placeholder="Your full name"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div style="margin-top: 12px">
+              <label for="email" class="block text-sm font-medium text-gray-700"
+                >Email</label
+              >
+              <input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="mt-8">
+          <button
+            id="submitBtn"
+            type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded disabled:bg-gray-400"
           >
-            <div class="progress-bar" id="progress-bar"></div>
-          </div>
-        </div>
-
-        <div style="margin-top: 16px">
-          <button id="submitBtn" type="submit">Submit Warranty Request</button>
+            Submit Warranty Request
+          </button>
         </div>
       </form>
       <div id="result" class="status" style="display: none"></div>
@@ -271,6 +254,64 @@
       const uploadProgress = document.getElementById("upload-progress");
       const progressBar = document.getElementById("progress-bar");
       const imageError = document.getElementById("image-error");
+      const dropZone = document.getElementById("drop-zone");
+
+      // Handle click to open file picker
+      dropZone.addEventListener("click", () => imageInput.click());
+
+      // Highlight drop area on drag over
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("bg-blue-50", "border-blue-400");
+      });
+
+      // Remove highlight on drag leave
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("bg-blue-50", "border-blue-400");
+      });
+
+      // Handle file drop
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("bg-blue-50", "border-blue-400");
+        handleFiles(e.dataTransfer.files);
+      });
+
+      // Handle file selection from click
+      imageInput.addEventListener("change", (e) => {
+        handleFiles(e.target.files);
+      });
+
+      // Common file handling logic
+      function handleFiles(files) {
+        const incomingFiles = Array.from(files);
+        hideError();
+
+        if (incomingFiles.length > MAX_FILES) {
+          showError(`Maximum ${MAX_FILES} files allowed.`);
+          return;
+        }
+
+        const validFiles = [];
+        const errors = [];
+
+        incomingFiles.forEach((file) => {
+          const error = validateFile(file);
+          if (error) {
+            errors.push(error);
+          } else {
+            validFiles.push(file);
+          }
+        });
+
+        if (errors.length > 0) {
+          showError(errors.join("\n"));
+        }
+
+        selectedFiles = validFiles;
+        updateFilePreview();
+        updateFileInput();
+      }
 
       let selectedFiles = [];
 
@@ -354,36 +395,6 @@
       function updateProgress(percent) {
         progressBar.style.width = `${percent}%`;
       }
-
-      // Handle file selection
-      imageInput.addEventListener("change", (e) => {
-        const files = Array.from(e.target.files);
-        hideError();
-
-        if (files.length > MAX_FILES) {
-          showError(`Maximum ${MAX_FILES} files allowed.`);
-          return;
-        }
-
-        const validFiles = [];
-        const errors = [];
-
-        files.forEach((file) => {
-          const error = validateFile(file);
-          if (error) {
-            errors.push(error);
-          } else {
-            validFiles.push(file);
-          }
-        });
-
-        if (errors.length > 0) {
-          showError(errors.join("\n"));
-        }
-
-        selectedFiles = validFiles;
-        updateFilePreview();
-      });
 
       async function uploadToNotion(files) {
         // Show progress bar
