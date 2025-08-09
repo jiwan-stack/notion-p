@@ -47,12 +47,14 @@ export const handler = async (event) => {
 
     console.log(`Attempting to serve file: ${filename}`);
 
-    // Get the file value and metadata in one call
-    const result = await store.getWithMetadata(filename);
-    const file = result?.value ?? result;
-    const meta = result?.metadata ?? {};
+    // Read binary as ArrayBuffer and fetch metadata
+    const [arrayBufferValue, metaResult] = await Promise.all([
+      store.get(filename, { type: "arrayBuffer" }),
+      store.getWithMetadata(filename),
+    ]);
+    const meta = metaResult?.metadata ?? {};
 
-    if (!file) {
+    if (!arrayBufferValue) {
       return {
         statusCode: 404,
         headers: corsHeaders,
@@ -60,18 +62,10 @@ export const handler = async (event) => {
       };
     }
 
-    // Ensure base64 body regardless of how the store returns data
-    let base64Body;
-    if (Buffer.isBuffer(file)) {
-      base64Body = file.toString("base64");
-    } else if (file && typeof file === "string") {
-      base64Body = Buffer.from(file).toString("base64");
-    } else if (file && typeof file.arrayBuffer === "function") {
-      const ab = await file.arrayBuffer();
-      base64Body = Buffer.from(new Uint8Array(ab)).toString("base64");
-    } else {
-      base64Body = Buffer.from(String(file)).toString("base64");
-    }
+    // Encode to base64 from ArrayBuffer
+    const base64Body = Buffer.from(new Uint8Array(arrayBufferValue)).toString(
+      "base64"
+    );
 
     // Validate base64 body
     if (!base64Body || typeof base64Body !== "string") {
