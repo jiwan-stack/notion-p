@@ -1,5 +1,3 @@
-import { getStore } from "@netlify/blobs";
-
 // Use native fetch instead of axios to avoid module compatibility issues
 
 export const handler = async (event) => {
@@ -104,72 +102,22 @@ export const handler = async (event) => {
         const buffer = Buffer.from(fileData, "base64");
         console.log(`File ${fileName} buffer length: ${buffer.length}`);
 
-        // Create unique filename
-        const timestamp = Date.now();
-        const uniqueFileName = `${timestamp}_${fileName}`;
-        console.log(`File ${fileName} unique name: ${uniqueFileName}`);
+        console.log(`Uploading file ${fileName} directly to Notion...`);
 
-        // Store file temporarily in Netlify Blobs
-        const store = getStore("temp-uploads");
-
-        try {
-          console.log(`Storing file ${fileName} in Netlify Blobs...`);
-          await store.set(uniqueFileName, buffer, {
-            contentType: mimeType,
-            access: "public",
-            ttl: 24 * 60 * 60, // 24 hours
-          });
-          console.log(`File ${fileName} stored successfully in Netlify Blobs`);
-        } catch (blobError) {
-          console.error(
-            `Error storing file ${fileName} in Netlify Blobs:`,
-            blobError
-          );
-          return {
-            success: false,
-            fileName,
-            error: "Failed to store file temporarily: " + blobError.message,
-          };
-        }
-
-        // Get public URL - use fallback if URL env var not set
-        const baseUrl =
-          process.env.URL ||
-          process.env.DEPLOY_URL ||
-          "https://notion-p.netlify.app";
-        const publicUrl = `${baseUrl}/.netlify/blobs/temp-uploads/${uniqueFileName}`;
-        console.log(`File ${fileName} temporary URL:`, publicUrl);
-
-        // Set expiry time to 24 hours from now
-        const expiryTime = new Date(
-          Date.now() + 24 * 60 * 60 * 1000
-        ).toISOString();
-
-        console.log(
-          `Uploading file ${fileName} to Notion with URL:`,
-          publicUrl
-        );
-
-        // Upload to Notion using Direct Upload API with fetch
+        // Upload directly to Notion using File Upload API
         const notionResponse = await fetch("https://api.notion.com/v1/files", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${notionApiKey}`,
             "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json",
+            "Content-Type": mimeType,
           },
-          body: JSON.stringify({
-            file: {
-              type: "file",
-              file: {
-                url: publicUrl,
-                expiry_time: expiryTime,
-              },
-            },
-          }),
+          body: buffer, // Send the file buffer directly
         });
 
         if (!notionResponse.ok) {
+          const errorText = await notionResponse.text();
+          console.error(`Notion API error for ${fileName}:`, errorText);
           throw new Error(
             `Notion API error: ${notionResponse.status} ${notionResponse.statusText}`
           );
