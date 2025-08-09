@@ -7,9 +7,10 @@ export default async function handler(req, res) {
     return res.status(405).send({ error: "Method not allowed" });
   }
 
-  const uploadsDir = path.join(process.cwd(), "uploads");
+  // Save in public/uploads
+  const uploadsDir = path.join(process.cwd(), "public", "uploads");
   if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir);
+    fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
   const files = [];
