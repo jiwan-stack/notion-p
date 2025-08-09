@@ -1,7 +1,7 @@
-const axios = require("axios");
-const { getStore } = require("@netlify/blobs");
+import axios from "axios";
+import { getStore } from "@netlify/blobs";
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":

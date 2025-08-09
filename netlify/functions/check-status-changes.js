@@ -1,5 +1,5 @@
-const axios = require("axios");
-const nodemailer = require("nodemailer");
+import axios from "axios";
+import nodemailer from "nodemailer";
 
 // Configure Nodemailer transporter
 const createTransporter = () => {
@@ -158,7 +158,7 @@ const checkStatusAndNotify = async (page, notionApiKey) => {
   return false;
 };
 
-exports.handler = async (event, context) => {
+export const handler = async (event, context) => {
   // Check if this is a scheduled function trigger or manual trigger
   const isScheduled =
     event.headers?.["x-netlify-scheduled"] ||

@@ -1,4 +1,4 @@
-const axios = require("axios");
+import axios from "axios";
 
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
@@ -11,7 +11,7 @@ const getHeader = (headers, name) => {
   return undefined;
 };
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
