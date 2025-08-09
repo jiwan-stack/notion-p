@@ -1,6 +1,6 @@
-# Notion Proxy Service
+# Notion Proxy Service with Direct File Upload
 
-A Netlify function that acts as a proxy to the Notion API, with automatic database ID injection for creating pages.
+A Netlify function that acts as a proxy to the Notion API, with automatic database ID injection for creating pages and **direct image uploads to Notion**.
 
 ## Local Development
 
@@ -46,6 +46,42 @@ The form submits to `/.netlify/functions/submit-to-notion?path=/v1/pages` and au
 - Injects the `parent.database_id` from environment variables
 - Handles CORS for local and production environments
 - Provides proper error handling and feedback
+- **Uploads images directly to Notion** using the Direct Upload API
+
+### File Upload Features
+
+- **Direct Notion Integration**: Images are uploaded directly to Notion's servers
+- **No External Storage**: Eliminates dependency on Netlify Blobs or other services
+- **Automatic Validation**: File size, type, and format validation
+- **Progress Tracking**: Real-time upload progress with visual feedback
+- **Error Handling**: Comprehensive error handling for upload failures
+
+## Direct File Upload to Notion
+
+The service now supports **direct image uploads to Notion** without requiring external storage services.
+
+### How It Works
+
+1. **Client-side Processing**: Images are converted to base64 using the FileReader API
+2. **Direct Upload**: Files are sent directly to Notion using their Direct Upload API
+3. **Database Integration**: Uploaded files are automatically linked to database entries
+4. **No External Dependencies**: Eliminates need for Netlify Blobs or other storage services
+
+### Supported Features
+
+- **File Types**: JPEG, PNG, GIF, WebP, SVG
+- **File Size**: Up to 5MB per file (free workspace limit)
+- **Batch Upload**: Up to 10 files per submission
+- **Progress Tracking**: Real-time upload progress with visual feedback
+- **Error Handling**: Comprehensive validation and error reporting
+
+### API Endpoint
+
+```
+POST /.netlify/functions/upload-to-notion
+```
+
+For detailed documentation, see [DIRECT_UPLOAD_README.md](./DIRECT_UPLOAD_README.md).
 
 ## Cron Function - Status Change Notifications
 
@@ -146,7 +182,8 @@ The function sends beautifully formatted HTML emails with:
 
 ## Environment Variables
 
-- `VITE_NOTION_API_KEY`: Your Notion integration token
+- `NOTION_API_KEY`: Your Notion integration token (for direct uploads)
+- `VITE_NOTION_API_KEY`: Your Notion integration token (for API proxy)
 - `VITE_NOTION_DATABASE_ID`: Your Notion database ID (for auto-injection)
 - `SMTP_HOST`: SMTP server host (default: smtp.gmail.com)
 - `SMTP_PORT`: SMTP server port (default: 587)

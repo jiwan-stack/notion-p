@@ -1,238 +1,561 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Warranty Service Request</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      max-width: 600px;
-      margin: 50px auto;
-      padding: 20px;
-      line-height: 1.6;
-      color: #333;
-    }
-    .container {
-      background: #f8f9fa;
-      padding: 30px;
-      border-radius: 8px;
-      border-left: 4px solid #007bff;
-    }
-    .status {
-      padding: 15px;
-      border-radius: 4px;
-      margin: 20px 0;
-    }
-    h1 {
-      color: #007bff;
-    }
-    label {
-      font-weight: bold;
-    }
-    input, select, textarea {
-      width: 100%;
-      padding: 8px;
-      margin-top: 6px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-    button {
-      background: #007bff;
-      color: #fff;
-      border: none;
-      padding: 10px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>Warranty Service Request</h1>
-    <form id="service-form">
-      <div>
-        <label for="name">Full Name</label>
-        <input id="name" name="name" type="text" required placeholder="Your full name" />
-      </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Warranty Service Request</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        line-height: 1.6;
+        color: #333;
+      }
+      .container {
+        background: #f8f9fa;
+        padding: 30px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+      }
+      .status {
+        padding: 15px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+      h1 {
+        color: #007bff;
+      }
+      label {
+        font-weight: bold;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 8px;
+        margin-top: 6px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+      button {
+        background: #007bff;
+        color: #fff;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+      .file-info {
+        background: #e9ecef;
+        padding: 10px;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 14px;
+      }
+      .file-error {
+        background: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+      }
+      .file-success {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .upload-progress {
+        width: 100%;
+        height: 20px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+      .progress-bar {
+        height: 100%;
+        background: #007bff;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+      .file-preview {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 10px 0;
+      }
+      .file-preview img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 2px solid #dee2e6;
+      }
+      .file-remove {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        font-size: 12px;
+      }
+      .file-item {
+        position: relative;
+      }
+      .help-text {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 4px;
+      }
+      .error-text {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Warranty Service Request</h1>
+      <form id="service-form">
+        <div>
+          <label for="name">Full Name</label>
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            placeholder="Your full name"
+          />
+        </div>
 
-      <div style="margin-top: 12px">
-        <label for="email">Email</label>
-        <input id="email" name="email" type="email" required placeholder="you@example.com" />
-      </div>
+        <div style="margin-top: 12px">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            placeholder="you@example.com"
+          />
+        </div>
 
-      <div style="margin-top: 12px">
-        <label for="product">Product Name</label>
-        <input id="product" name="product" type="text" required placeholder="e.g. Washing Machine Model X" />
-      </div>
+        <div style="margin-top: 12px">
+          <label for="product">Product Name</label>
+          <input
+            id="product"
+            name="product"
+            type="text"
+            required
+            placeholder="e.g. Washing Machine Model X"
+          />
+        </div>
 
-      <div style="margin-top: 12px">
-        <label for="serial">Serial Number</label>
-        <input id="serial" name="serial" type="text" required placeholder="e.g. SN12345678" />
-      </div>
+        <div style="margin-top: 12px">
+          <label for="serial">Serial Number</label>
+          <input
+            id="serial"
+            name="serial"
+            type="text"
+            required
+            placeholder="e.g. SN12345678"
+          />
+        </div>
 
-      <div style="margin-top: 12px">
-        <label for="purchaseDate">Purchase Date</label>
-        <input id="purchaseDate" name="purchaseDate" type="date" required />
-      </div>
+        <div style="margin-top: 12px">
+          <label for="purchaseDate">Purchase Date</label>
+          <input id="purchaseDate" name="purchaseDate" type="date" required />
+        </div>
 
-      <div style="margin-top: 12px">
-        <label for="service">Issue Type</label>
-        <select id="service" name="service" required>
-          <option value="" disabled selected>Select issue</option>
-          <option value="Defective Part">Defective Part</option>
-          <option value="Not Functioning">Not Functioning</option>
-          <option value="Performance Issue">Performance Issue</option>
-          <option value="Physical Damage (Covered)">Physical Damage (Covered)</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
+        <div style="margin-top: 12px">
+          <label for="service">Issue Type</label>
+          <select id="service" name="service" required>
+            <option value="" disabled selected>Select issue</option>
+            <option value="Defective Part">Defective Part</option>
+            <option value="Not Functioning">Not Functioning</option>
+            <option value="Performance Issue">Performance Issue</option>
+            <option value="Physical Damage (Covered)">
+              Physical Damage (Covered)
+            </option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
 
-      <div style="margin-top: 12px">
-        <label for="details">Issue Details</label>
-        <textarea id="details" name="details" required placeholder="Describe the problem" rows="5"></textarea>
-      </div>
+        <div style="margin-top: 12px">
+          <label for="details">Issue Details</label>
+          <textarea
+            id="details"
+            name="details"
+            required
+            placeholder="Describe the problem"
+            rows="5"
+          ></textarea>
+        </div>
 
-      <!-- Updated: multiple images -->
-      <div style="margin-top: 12px">
-        <label for="image">Upload Images</label>
-        <input id="image" name="image" type="file" accept="image/*" capture="environment" multiple />
-      </div>
+        <!-- Enhanced image upload section -->
+        <div style="margin-top: 12px">
+          <label for="image">Upload Images</label>
+          <input
+            id="image"
+            name="image"
+            type="file"
+            accept="image/*"
+            capture="environment"
+            multiple
+            aria-describedby="image-help image-error"
+          />
+          <div id="image-help" class="help-text">
+            Supported formats: JPG, PNG, GIF, WebP, SVG. Max file size: 5MB. Max
+            files: 10. Images are uploaded directly to Notion.
+          </div>
+          <div id="image-error" class="error-text" style="display: none"></div>
 
-      <div style="margin-top: 16px">
-        <button id="submitBtn" type="submit">Submit Warranty Request</button>
-      </div>
-    </form>
-    <div id="result" class="status" style="display: none"></div>
-  </div>
+          <!-- File preview area -->
+          <div
+            id="file-preview"
+            class="file-preview"
+            style="display: none"
+          ></div>
 
-  <script>
-    const CLIENT_DATABASE_ID = "24a30c0a61cd80869243f2beb52b019c";
-    const BASE_URL= "https://notion-p.netlify.app/"
-    const form = document.getElementById("service-form");
-    const resultEl = document.getElementById("result");
-    const submitBtn = document.getElementById("submitBtn");
+          <!-- Upload progress -->
+          <div
+            id="upload-progress"
+            class="upload-progress"
+            style="display: none"
+          >
+            <div class="progress-bar" id="progress-bar"></div>
+          </div>
+        </div>
 
-    function showResult(message, ok) {
-      resultEl.style.display = "block";
-      resultEl.style.background = ok ? "#d4edda" : "#f8d7da";
-      resultEl.style.color = ok ? "#155724" : "#721c24";
-      resultEl.textContent = message;
-    }
+        <div style="margin-top: 16px">
+          <button id="submitBtn" type="submit">Submit Warranty Request</button>
+        </div>
+      </form>
+      <div id="result" class="status" style="display: none"></div>
+    </div>
 
-    async function uploadToNetlify(files) {
-      const formData = new FormData();
-      for (const file of files) {
-        formData.append("file", file);
+    <script>
+      const CLIENT_DATABASE_ID = "24a30c0a61cd80869243f2beb52b019c";
+      const BASE_URL = "https://notion-p.netlify.app/";
+
+      // File upload constants based on Notion API limits
+      const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for free workspaces
+      const MAX_FILES = 10;
+      const SUPPORTED_TYPES = [
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+        "image/webp",
+        "image/svg+xml",
+      ];
+
+      const form = document.getElementById("service-form");
+      const resultEl = document.getElementById("result");
+      const submitBtn = document.getElementById("submitBtn");
+      const imageInput = document.getElementById("image");
+      const filePreview = document.getElementById("file-preview");
+      const uploadProgress = document.getElementById("upload-progress");
+      const progressBar = document.getElementById("progress-bar");
+      const imageError = document.getElementById("image-error");
+
+      let selectedFiles = [];
+
+      function showResult(message, ok) {
+        resultEl.style.display = "block";
+        resultEl.style.background = ok ? "#d4edda" : "#f8d7da";
+        resultEl.style.color = ok ? "#155724" : "#721c24";
+        resultEl.textContent = message;
       }
 
-      const res = await fetch(`${BASE_URL}.netlify/functions/upload-image`, {
-        method: "POST",
-        body: formData
-      });
-
-      if (!res.ok) {
-        let text;
-        try { text = await res.text(); } catch { text = res.statusText; }
-        throw new Error("Upload failed: " + text);
+      function showError(message) {
+        imageError.textContent = message;
+        imageError.style.display = "block";
       }
 
-      const data = await res.json();
-      if (!data.urls) throw new Error("Upload function did not return URLs");
-      return data.urls;
-    }
+      function hideError() {
+        imageError.style.display = "none";
+      }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      submitBtn.disabled = true;
-      showResult("Submitting…", true);
-
-      const name = document.getElementById("name").value.trim();
-      const email = document.getElementById("email").value.trim();
-      const product = document.getElementById("product").value.trim();
-      const serial = document.getElementById("serial").value.trim();
-      const purchaseDate = document.getElementById("purchaseDate").value;
-      const service = document.getElementById("service").value;
-      const details = document.getElementById("details").value.trim();
-      const imageFiles = document.getElementById("image").files;
-
-      const now = new Date();
-      const dateReceived = now.toISOString().split("T")[0];
-      const followUp = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
-
-      let imageUrls = [];
-      try {
-        if (imageFiles.length > 0) {
-          showResult("Uploading images…", true);
-          imageUrls = await uploadToNetlify(imageFiles);
+      function validateFile(file) {
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+          return `File "${file.name}" is too large. Maximum size is 5MB.`;
         }
 
-        const body = {
-          clientDatabaseId: CLIENT_DATABASE_ID,
-          properties: {
-            "Client Name": { title: [{ text: { content: name } }] },
-            "Email": { email },
-            "Product Name": { rich_text: [{ text: { content: product } }] },
-            "Serial Number": { rich_text: [{ text: { content: serial } }] },
-            "Purchase Date": { date: { start: purchaseDate } },
-            "Project Details": { rich_text: [{ text: { content: details } }] },
-            "Service Type": { select: { name: service } },
-            "Budget Range": { select: { name: "Warranty" } },
-            "Status": { status: { name: "New" } },
-            "Date Received": { date: { start: dateReceived } },
-            "Follow-up Date": { date: { start: followUp } },
-            ...(imageUrls.length > 0 && {
-              "Image Upload": {
-                files: imageUrls.map((url, idx) => ({
-                  name: imageFiles[idx].name,
-                  external: { url }
-                }))
-              }
-            }),
-          },
-        };
+        // Check file type
+        if (!SUPPORTED_TYPES.includes(file.type)) {
+          return `File "${file.name}" is not a supported image format.`;
+        }
 
-        const res = await fetch(`${BASE_URL}.netlify/functions/submit-to-notion?path=/v1/pages`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          body: JSON.stringify(body),
+        return null;
+      }
+
+      function createFilePreview(file, index) {
+        const fileItem = document.createElement("div");
+        fileItem.className = "file-item";
+
+        const img = document.createElement("img");
+        img.src = URL.createObjectURL(file);
+        img.alt = `Preview of ${file.name}`;
+
+        const removeBtn = document.createElement("button");
+        removeBtn.className = "file-remove";
+        removeBtn.innerHTML = "×";
+        removeBtn.setAttribute("aria-label", `Remove ${file.name}`);
+        removeBtn.onclick = () => removeFile(index);
+
+        fileItem.appendChild(img);
+        fileItem.appendChild(removeBtn);
+
+        return fileItem;
+      }
+
+      function removeFile(index) {
+        selectedFiles.splice(index, 1);
+        updateFilePreview();
+        updateFileInput();
+      }
+
+      function updateFilePreview() {
+        filePreview.innerHTML = "";
+
+        if (selectedFiles.length === 0) {
+          filePreview.style.display = "none";
+          return;
+        }
+
+        filePreview.style.display = "flex";
+        selectedFiles.forEach((file, index) => {
+          filePreview.appendChild(createFilePreview(file, index));
+        });
+      }
+
+      function updateFileInput() {
+        // Create a new FileList-like object
+        const dt = new DataTransfer();
+        selectedFiles.forEach((file) => dt.items.add(file));
+        imageInput.files = dt.files;
+      }
+
+      function updateProgress(percent) {
+        progressBar.style.width = `${percent}%`;
+      }
+
+      // Handle file selection
+      imageInput.addEventListener("change", (e) => {
+        const files = Array.from(e.target.files);
+        hideError();
+
+        if (files.length > MAX_FILES) {
+          showError(`Maximum ${MAX_FILES} files allowed.`);
+          return;
+        }
+
+        const validFiles = [];
+        const errors = [];
+
+        files.forEach((file) => {
+          const error = validateFile(file);
+          if (error) {
+            errors.push(error);
+          } else {
+            validFiles.push(file);
+          }
         });
 
-        if (!res.ok) {
-          const errorText = await res.text();
-          let errorData;
-          try {
-            errorData = JSON.parse(errorText);
-          } catch {
-            errorData = { error: errorText };
-          }
-          throw new Error(errorData.error || errorData.message || `HTTP ${res.status}`);
+        if (errors.length > 0) {
+          showError(errors.join("\n"));
         }
 
-        const text = await res.text();
-        let data;
+        selectedFiles = validFiles;
+        updateFilePreview();
+      });
+
+      async function uploadToNotion(files) {
+        // Show progress bar
+        uploadProgress.style.display = "block";
+        updateProgress(0);
+
         try {
-          data = JSON.parse(text);
-        } catch {
-          data = { raw: text };
+          // Convert files to base64 for direct upload
+          const filePromises = files.map(async (file) => {
+            return new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64Data = reader.result.split(",")[1]; // Remove data:image/...;base64, prefix
+                resolve({
+                  name: file.name,
+                  type: file.type,
+                  size: file.size,
+                  data: base64Data,
+                });
+              };
+              reader.readAsDataURL(file);
+            });
+          });
+
+          updateProgress(25);
+          const fileData = await Promise.all(filePromises);
+          updateProgress(50);
+
+          // Upload directly to Notion
+          const res = await fetch(
+            `${BASE_URL}.netlify/functions/upload-to-notion`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ files: fileData }),
+            }
+          );
+
+          if (!res.ok) {
+            let text;
+            try {
+              text = await res.text();
+            } catch {
+              text = res.statusText;
+            }
+            throw new Error("Upload failed: " + text);
+          }
+
+          updateProgress(75);
+
+          const data = await res.json();
+          if (!data.uploadedFiles || data.uploadedFiles.length === 0) {
+            throw new Error("No files were successfully uploaded");
+          }
+
+          updateProgress(100);
+
+          // Return the Notion file objects for database integration
+          return data.uploadedFiles.map((file) => ({
+            name: file.fileName,
+            type: "file",
+            file: {
+              url: file.notionFile.url,
+              expiry_time: file.notionFile.expiry_time,
+            },
+          }));
+        } catch (error) {
+          console.error("Upload error:", error);
+          throw error;
+        } finally {
+          // Hide progress bar after a delay
+          setTimeout(() => {
+            uploadProgress.style.display = "none";
+            updateProgress(0);
+          }, 1000);
         }
-
-        if (data.error) throw new Error(data.error);
-
-        showResult("Request submitted successfully!", true);
-        form.reset();
-      } catch (err) {
-        console.error("Submission error:", err);
-        showResult(`Error: ${err.message}`, false);
-      } finally {
-        submitBtn.disabled = false;
       }
-    });
-  </script>
-</body>
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        submitBtn.disabled = true;
+        showResult("Submitting…", true);
+
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const product = document.getElementById("product").value.trim();
+        const serial = document.getElementById("serial").value.trim();
+        const purchaseDate = document.getElementById("purchaseDate").value;
+        const service = document.getElementById("service").value;
+        const details = document.getElementById("details").value.trim();
+
+        const now = new Date();
+        const dateReceived = now.toISOString().split("T")[0];
+        const followUp = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+          .toISOString()
+          .split("T")[0];
+
+        let imageFiles = [];
+        try {
+          if (selectedFiles.length > 0) {
+            showResult("Uploading images directly to Notion…", true);
+            imageFiles = await uploadToNotion(selectedFiles);
+          }
+
+          const body = {
+            clientDatabaseId: CLIENT_DATABASE_ID,
+            properties: {
+              "Client Name": { title: [{ text: { content: name } }] },
+              Email: { email },
+              "Product Name": { rich_text: [{ text: { content: product } }] },
+              "Serial Number": { rich_text: [{ text: { content: serial } }] },
+              "Purchase Date": { date: { start: purchaseDate } },
+              "Project Details": {
+                rich_text: [{ text: { content: details } }],
+              },
+              "Service Type": { select: { name: service } },
+              "Budget Range": { select: { name: "Warranty" } },
+              Status: { status: { name: "New" } },
+              "Date Received": { date: { start: dateReceived } },
+              "Follow-up Date": { date: { start: followUp } },
+              ...(imageFiles.length > 0 && {
+                "Image Upload": {
+                  files: imageFiles,
+                },
+              }),
+            },
+          };
+
+          const res = await fetch(
+            `${BASE_URL}.netlify/functions/submit-to-notion?path=/v1/pages`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Accept: "application/json",
+              },
+              body: JSON.stringify(body),
+            }
+          );
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            let errorData;
+            try {
+              errorData = JSON.parse(errorText);
+            } catch {
+              errorData = { error: errorText };
+            }
+            throw new Error(
+              errorData.error || errorData.message || `HTTP ${res.status}`
+            );
+          }
+
+          const text = await res.text();
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            data = { raw: text };
+          }
+
+          if (data.error) throw new Error(data.error);
+
+          showResult("Request submitted successfully!", true);
+          form.reset();
+          selectedFiles = [];
+          updateFilePreview();
+        } catch (err) {
+          console.error("Submission error:", err);
+          showResult(`Error: ${err.message}`, false);
+        } finally {
+          submitBtn.disabled = false;
+        }
+      });
+    </script>
+  </body>
 </html>
