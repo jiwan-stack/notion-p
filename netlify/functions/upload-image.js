@@ -1,3 +1,4 @@
+// netlify/functions/upload-image.js
 import fs from "fs";
 import path from "path";
 import formidable from "formidable";
@@ -9,25 +10,31 @@ export const config = {
 };
 
 export default async (req, res) => {
-  const form = new formidable.IncomingForm({ keepExtensions: true });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
 
-  form.parse(req, (err, fields, files) => {
-    if (err) {
-      res.status(500).json({ error: "File parse error" });
-      return;
-    }
-
-    const file = files.file;
-    const uploadsDir = path.join(process.cwd(), "public", "uploads");
-
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const newFilePath = path.join(uploadsDir, file.originalFilename);
-    fs.copyFileSync(file.filepath, newFilePath);
-
-    const publicUrl = `${process.env.URL}/uploads/${file.originalFilename}`;
-    res.status(200).json({ imageUrl: publicUrl });
+  const form = formidable({
+    multiples: true, // ✅ allow multiple files
+    uploadDir: path.join(process.cwd(), "public/uploads"),
+    keepExtensions: true,
   });
+
+  try {
+    const filesData = await new Promise((resolve, reject) => {
+      form.parse(req, (err, fields, files) => {
+        if (err) reject(err);
+        resolve(files.file); // "file" is the name in <input name="file" />
+      });
+    });
+
+    const uploadedFiles = Array.isArray(filesData) ? filesData : [filesData];
+    const fileUrls = uploadedFiles.map(
+      (file) => `/uploads/${path.basename(file.filepath)}`
+    );
+
+    res.status(200).json({ urls: fileUrls });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 };
