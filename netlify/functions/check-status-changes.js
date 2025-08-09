@@ -178,7 +178,7 @@ exports.handler = async (event, context) => {
 
   const notionApiKey = process.env.VITE_NOTION_API_KEY;
   const databaseId = process.env.VITE_NOTION_DATABASE_ID;
-
+  console.log("VITE_NOTION_DATABASE_ID-->", databaseId);
   if (!notionApiKey || !databaseId) {
     return {
       statusCode: 500,
