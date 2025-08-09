@@ -181,13 +181,15 @@
           <label for="service">Issue Type</label>
           <select id="service" name="service" required>
             <option value="" disabled selected>Select issue</option>
+            <option value="Mechanical">Mechanical</option>
+            <option value="Electrical">Electrical</option>
+            <option value="Software">Software</option>
+            <option value="Cosmetic">Cosmetic</option>
+            <option value="Accessory">Accessory</option>
+            <option value="Documentation">Documentation</option>
+            <option value="Other">Other</option>
             <option value="Defective Part">Defective Part</option>
             <option value="Not Functioning">Not Functioning</option>
-            <option value="Performance Issue">Performance Issue</option>
-            <option value="Physical Damage (Covered)">
-              Physical Damage (Covered)
-            </option>
-            <option value="Other">Other</option>
           </select>
         </div>
 
@@ -422,7 +424,10 @@
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify({ clientDatabaseId: CLIENT_DATABASE_ID, files: fileData }),
+              body: JSON.stringify({
+                clientDatabaseId: CLIENT_DATABASE_ID,
+                files: fileData,
+              }),
             }
           );
 
