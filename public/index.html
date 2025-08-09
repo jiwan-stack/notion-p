@@ -526,16 +526,15 @@
           const body = {
             clientDatabaseId: CLIENT_DATABASE_ID,
             properties: {
-              "Client Name": { title: [{ text: { content: name } }] },
+              "Full Name": { title: [{ text: { content: name } }] },
               Email: { email },
               "Product Name": { rich_text: [{ text: { content: product } }] },
               "Serial Number": { rich_text: [{ text: { content: serial } }] },
               "Purchase Date": { date: { start: purchaseDate } },
-              "Project Details": {
+              "Issue Details": {
                 rich_text: [{ text: { content: details } }],
               },
-              "Service Type": { select: { name: service } },
-              "Budget Range": { select: { name: "Warranty" } },
+              "Issue Type": { select: { name: service } },
               Status: { status: { name: "New" } },
               "Date Received": { date: { start: dateReceived } },
               "Follow-up Date": { date: { start: followUp } },
