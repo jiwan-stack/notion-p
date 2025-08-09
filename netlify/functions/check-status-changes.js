@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer";
 
-// Dynamic import for axios to avoid module resolution issues
-let axios;
+// Use native fetch instead of axios to avoid module compatibility issues
 
 // Configure Nodemailer transporter
 const createTransporter = () => {
@@ -52,42 +51,51 @@ const sendEmail = async (to, subject, body) => {
 // Get all pages from the database that have status changes
 const getDatabasePages = async (databaseId, notionApiKey) => {
   try {
-    const response = await axios.post(
+    const response = await fetch(
       `https://api.notion.com/v1/databases/${databaseId}/query`,
       {
-        filter: {
-          or: [
-            {
-              property: "Status",
-              status: {
-                equals: "Approved",
-              },
-            },
-            {
-              property: "Status",
-              status: {
-                equals: "Declined",
-              },
-            },
-          ],
-        },
-        sorts: [
-          {
-            property: "Date Received",
-            direction: "descending",
-          },
-        ],
-      },
-      {
+        method: "POST",
         headers: {
           Authorization: `Bearer ${notionApiKey}`,
           "Notion-Version": "2022-06-28",
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          filter: {
+            or: [
+              {
+                property: "Status",
+                status: {
+                  equals: "Approved",
+                },
+              },
+              {
+                property: "Status",
+                status: {
+                  equals: "Declined",
+                },
+              },
+            ],
+          },
+          sorts: [
+            {
+              property: "Date Received",
+              direction: "descending",
+            },
+          ],
+        }),
       }
     );
-    console.log(response.data.results);
-    return response.data.results || [];
+
+    if (!response.ok) {
+      throw new Error(
+        `Notion API error: ${response.status} ${response.statusText}`
+      );
+    }
+
+    const data = await response.json();
+    console.log(data.results);
+    return data.results || [];
   } catch (error) {
     console.error("Failed to fetch database pages:", error.message);
     return [];
@@ -161,12 +169,6 @@ const checkStatusAndNotify = async (page, notionApiKey) => {
 };
 
 export const handler = async (event, context) => {
-  // Dynamic import axios
-  if (!axios) {
-    const axiosModule = await import("axios");
-    axios = axiosModule.default;
-  }
-
   // Check if this is a scheduled function trigger or manual trigger
   const isScheduled =
     event.headers?.["x-netlify-scheduled"] ||

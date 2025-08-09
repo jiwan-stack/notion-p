@@ -1,5 +1,4 @@
-// Dynamic import for axios to avoid module resolution issues
-let axios;
+// Use native fetch instead of axios to avoid module compatibility issues
 
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
@@ -13,12 +12,6 @@ const getHeader = (headers, name) => {
 };
 
 export const handler = async (event) => {
-  // Dynamic import axios
-  if (!axios) {
-    const axiosModule = await import("axios");
-    axios = axiosModule.default;
-  }
-
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":

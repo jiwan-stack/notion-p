@@ -1,15 +1,8 @@
 import { getStore } from "@netlify/blobs";
 
-// Dynamic import for axios to avoid module resolution issues
-let axios;
+// Use native fetch instead of axios to avoid module compatibility issues
 
 export const handler = async (event) => {
-  // Dynamic import axios
-  if (!axios) {
-    const axiosModule = await import("axios");
-    axios = axiosModule.default;
-  }
-
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
@@ -157,10 +150,15 @@ export const handler = async (event) => {
           publicUrl
         );
 
-        // Upload to Notion using Direct Upload API
-        const notionResponse = await axios.post(
-          "https://api.notion.com/v1/files",
-          {
+        // Upload to Notion using Direct Upload API with fetch
+        const notionResponse = await fetch("https://api.notion.com/v1/files", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${notionApiKey}`,
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
             file: {
               type: "file",
               file: {
@@ -168,26 +166,22 @@ export const handler = async (event) => {
                 expiry_time: expiryTime,
               },
             },
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${notionApiKey}`,
-              "Notion-Version": "2022-06-28",
-              "Content-Type": "application/json",
-            },
-            timeout: 30000, // 30 second timeout
-          }
-        );
+          }),
+        });
 
-        console.log(
-          `File ${fileName} Notion API response:`,
-          notionResponse.data
-        );
+        if (!notionResponse.ok) {
+          throw new Error(
+            `Notion API error: ${notionResponse.status} ${notionResponse.statusText}`
+          );
+        }
+
+        const notionData = await notionResponse.json();
+        console.log(`File ${fileName} Notion API response:`, notionData);
 
         return {
           success: true,
           fileName,
-          notionFile: notionResponse.data,
+          notionFile: notionData,
           originalFile: {
             name: fileName,
             type: mimeType,
@@ -199,17 +193,15 @@ export const handler = async (event) => {
 
         // Handle specific Notion API errors
         let errorMessage = error.message;
-        if (error.response?.data?.error) {
-          errorMessage = error.response.data.error;
-        } else if (error.response?.status === 413) {
+        if (error.status === 413) {
           errorMessage = "File too large for Notion";
-        } else if (error.response?.status === 400) {
+        } else if (error.status === 400) {
           errorMessage = "Invalid file format or data";
-        } else if (error.response?.status === 401) {
+        } else if (error.status === 401) {
           errorMessage = "Notion API authentication failed";
-        } else if (error.response?.status === 403) {
+        } else if (error.status === 403) {
           errorMessage = "Notion API access denied";
-        } else if (error.response?.status === 429) {
+        } else if (error.status === 429) {
           errorMessage = "Notion API rate limit exceeded";
         }
 
