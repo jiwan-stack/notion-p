@@ -28,11 +28,13 @@ export const handler = async (event) => {
 
         // Construct public URL
         const publicUrl = `${process.env.URL}/.netlify/blobs/uploads/${filename}`;
+        console.log("publicUrl--->>>", publicUrl);
         fileUrls.push(publicUrl);
       });
     });
 
     busboy.on("finish", () => {
+        console.log("fileUrls--->>>", fileUrls);
       resolve({
         statusCode: 200,
         body: JSON.stringify({ urls: fileUrls }),
