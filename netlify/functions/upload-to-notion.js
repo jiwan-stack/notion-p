@@ -1,7 +1,5 @@
-import { getStore } from "@netlify/blobs";
-
 // Use native fetch instead of axios to avoid module compatibility issues
-// Note: This function now requires NETLIFY_BLOBS_CONTEXT environment variable
+// Note: This function now uploads files directly to Notion without temporary storage
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -105,100 +103,29 @@ export const handler = async (event) => {
         const buffer = Buffer.from(fileData, "base64");
         console.log(`File ${fileName} buffer length: ${buffer.length}`);
 
-        // Create unique filename
+        // Create unique filename for logging purposes
         const timestamp = Date.now();
         const uniqueFileName = `${timestamp}_${fileName}`;
         console.log(`File ${fileName} unique name: ${uniqueFileName}`);
 
-        // Store file temporarily in Netlify Blobs
-        // Parse the NETLIFY_BLOBS_CONTEXT environment variable
-        const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
-        if (!blobsContext) {
-          throw new Error(
-            "NETLIFY_BLOBS_CONTEXT environment variable is required"
-          );
-        }
+        // No need to store in Netlify Blobs anymore since we're uploading directly to Notion
+        console.log(`File ${fileName} ready for direct upload to Notion`);
 
-        const store = getStore("temp-uploads", {
-          siteID: JSON.parse(Buffer.from(blobsContext, "base64").toString())
-            .siteID,
-          token: JSON.parse(Buffer.from(blobsContext, "base64").toString())
-            .token,
-        });
-
-        try {
-          console.log(`Storing file ${fileName} in Netlify Blobs...`);
-          await store.set(uniqueFileName, buffer, {
-            contentType: mimeType,
-            access: "public",
-            ttl: 24 * 60 * 60, // 24 hours
-          });
-          console.log(`File ${fileName} stored successfully in Netlify Blobs`);
-        } catch (blobError) {
-          console.error(
-            `Error storing file ${fileName} in Netlify Blobs:`,
-            blobError
-          );
-          return {
-            success: false,
-            fileName,
-            error: "Failed to store file temporarily: " + blobError.message,
-          };
-        }
-
-        // Get public URL - use fallback if URL env var not set
-        const baseUrl =
-          process.env.URL ||
-          process.env.DEPLOY_URL ||
-          "https://notion-p.netlify.app";
-
-        // Use our custom endpoint to serve the file publicly
-        const publicUrl = `${baseUrl}/.netlify/functions/serve-blob/${uniqueFileName}`;
-        console.log(`File ${fileName} temporary URL:`, publicUrl);
-
-        // Set expiry time to 24 hours from now
-        const expiryTime = new Date(
-          Date.now() + 24 * 60 * 60 * 1000
-        ).toISOString();
-
+        // Instead of trying to make Netlify Blobs files publicly accessible,
+        // let's upload the file directly to Notion using their File Upload API
         console.log(
-          `Uploading file ${fileName} to Notion with URL:`,
-          publicUrl
-        );
-        console.log(
-          `Full Notion API request body:`,
-          JSON.stringify(
-            {
-              file: {
-                type: "file",
-                file: {
-                  url: publicUrl,
-                  expiry_time: expiryTime,
-                },
-              },
-            },
-            null,
-            2
-          )
+          `Uploading file ${fileName} directly to Notion using File Upload API`
         );
 
-        // Upload to Notion using Direct Upload API with fetch
+        // Upload to Notion using File Upload API (not Direct Upload)
         const notionResponse = await fetch("https://api.notion.com/v1/files", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${notionApiKey}`,
             "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json",
+            "Content-Type": mimeType,
           },
-          body: JSON.stringify({
-            file: {
-              type: "file",
-              file: {
-                url: publicUrl,
-                expiry_time: expiryTime,
-              },
-            },
-          }),
+          body: buffer, // Send the file buffer directly
         });
 
         if (!notionResponse.ok) {
