@@ -1,5 +1,7 @@
+import { getStore } from "@netlify/blobs";
+
 // Use native fetch instead of axios to avoid module compatibility issues
-// Note: This function now uploads files directly to Notion without temporary storage
+// Note: This function now creates Notion pages with file attachments using public URLs
 
 export const handler = async (event) => {
   const corsHeaders = {
@@ -111,21 +113,105 @@ export const handler = async (event) => {
         // No need to store in Netlify Blobs anymore since we're uploading directly to Notion
         console.log(`File ${fileName} ready for direct upload to Notion`);
 
-        // Instead of trying to make Netlify Blobs files publicly accessible,
-        // let's upload the file directly to Notion using their File Upload API
+        // Notion's /v1/files endpoint requires a URL, not direct file data
+        // We need to create a publicly accessible URL first
+        // Let's use our serve-blob function to create a public endpoint
+        const baseUrl =
+          process.env.URL ||
+          process.env.DEPLOY_URL ||
+          "https://notion-p.netlify.app";
+        const publicUrl = `${baseUrl}/.netlify/functions/serve-blob/${uniqueFileName}`;
+
+        console.log(`Creating public URL for Notion: ${publicUrl}`);
+
+        // Store the file in Netlify Blobs so our serve-blob function can access it
+        const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
+        if (!blobsContext) {
+          throw new Error(
+            "NETLIFY_BLOBS_CONTEXT environment variable is required"
+          );
+        }
+
+        const store = getStore("temp-uploads", {
+          siteID: JSON.parse(Buffer.from(blobsContext, "base64").toString())
+            .siteID,
+          token: JSON.parse(Buffer.from(blobsContext, "base64").toString())
+            .token,
+        });
+
+        try {
+          console.log(
+            `Storing file ${fileName} in Netlify Blobs for public access...`
+          );
+          await store.set(uniqueFileName, buffer, {
+            contentType: mimeType,
+            ttl: 24 * 60 * 60, // 24 hours
+          });
+          console.log(`File ${fileName} stored successfully in Netlify Blobs`);
+        } catch (blobError) {
+          console.error(
+            `Error storing file ${fileName} in Netlify Blobs:`,
+            blobError
+          );
+          return {
+            success: false,
+            fileName,
+            error:
+              "Failed to store file for public access: " + blobError.message,
+          };
+        }
+
+        // Set expiry time to 24 hours from now
+        const expiryTime = new Date(
+          Date.now() + 24 * 60 * 60 * 1000
+        ).toISOString();
+
+        console.log(`Creating Notion page with file attachment: ${publicUrl}`);
+
+        // Instead of using /v1/files (which is for Direct Upload),
+        // we'll create a page with the file attached using the public URL
+        // This is the correct way according to Notion's documentation
+        const requestBody = {
+          parent: { database_id: process.env.VITE_NOTION_DATABASE_ID },
+          properties: {
+            Name: {
+              title: [
+                {
+                  text: {
+                    content: fileName,
+                  },
+                },
+              ],
+            },
+            // Add file to the page
+            Files: {
+              files: [
+                {
+                  name: fileName,
+                  type: "external",
+                  external: {
+                    url: publicUrl,
+                  },
+                },
+              ],
+            },
+          },
+        };
+
         console.log(
-          `Uploading file ${fileName} directly to Notion using File Upload API`
+          `Full Notion API request body:`,
+          JSON.stringify(requestBody, null, 2)
         );
 
-        // Upload to Notion using File Upload API (not Direct Upload)
-        const notionResponse = await fetch("https://api.notion.com/v1/files", {
+        // Create a page with the file attached
+        const notionResponse = await fetch("https://api.notion.com/v1/pages", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${notionApiKey}`,
             "Notion-Version": "2022-06-28",
-            "Content-Type": mimeType,
+            "Content-Type": "application/json",
           },
-          body: buffer, // Send the file buffer directly
+          body: JSON.stringify(requestBody),
         });
 
         if (!notionResponse.ok) {
@@ -137,12 +223,12 @@ export const handler = async (event) => {
         }
 
         const notionData = await notionResponse.json();
-        console.log(`File ${fileName} Notion API response:`, notionData);
+        console.log(`File ${fileName} Notion page created:`, notionData);
 
         return {
           success: true,
           fileName,
-          notionFile: notionData,
+          notionPage: notionData,
           originalFile: {
             name: fileName,
             type: mimeType,

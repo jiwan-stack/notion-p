@@ -446,17 +446,45 @@
             throw new Error("No files were successfully uploaded");
           }
 
+          console.log("Successfully uploaded files:", data.uploadedFiles);
+          console.log(
+            "File structure for database:",
+            data.uploadedFiles.map((f) => ({
+              fileName: f.fileName,
+              notionPage: f.notionPage,
+              properties: f.notionPage?.properties,
+            }))
+          );
+
           updateProgress(100);
 
           // Return the Notion file objects for database integration
-          return data.uploadedFiles.map((file) => ({
-            name: file.fileName,
-            type: "file",
-            file: {
-              url: file.notionFile.url,
-              expiry_time: file.notionFile.expiry_time,
-            },
-          }));
+          // Since we're now creating pages with file attachments, we need to extract
+          // the file information from the page response
+          return data.uploadedFiles.map((file) => {
+            // Extract file info from the created page
+            const page = file.notionPage;
+            const filesProperty = page.properties?.Files?.files?.[0];
+
+            if (filesProperty && filesProperty.external) {
+              return {
+                name: file.fileName,
+                type: "external",
+                external: {
+                  url: filesProperty.external.url,
+                },
+              };
+            }
+
+            // Fallback if file structure is different
+            return {
+              name: file.fileName,
+              type: "external",
+              external: {
+                url: file.notionPage.url || "", // Use page URL as fallback
+              },
+            };
+          });
         } catch (error) {
           console.error("Upload error:", error);
           throw error;

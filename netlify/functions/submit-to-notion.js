@@ -108,33 +108,51 @@ export const handler = async (event) => {
 
     const { path: _omitPath, version: _omitVersion, ...restParams } = query;
 
-    const response = await axios({
-      url: targetUrl,
+    // Build query string from params
+    const queryString = Object.keys(restParams)
+      .map(
+        (key) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(restParams[key])}`
+      )
+      .join("&");
+
+    const fullUrl = queryString ? `${targetUrl}?${queryString}` : targetUrl;
+
+    const response = await fetch(fullUrl, {
       method,
       headers: upstreamHeaders,
-      data,
-      params: restParams,
-      timeout: 15000,
-      validateStatus: () => true,
+      body: hasBodyMethod && data ? JSON.stringify(data) : undefined,
     });
+
+    let responseData;
+    try {
+      responseData = await response.text();
+      // Try to parse as JSON, fallback to text
+      try {
+        responseData = JSON.parse(responseData);
+      } catch {
+        // Keep as text if not JSON
+      }
+    } catch {
+      responseData = "";
+    }
 
     return {
       statusCode: response.status,
       headers: corsHeaders,
       body:
-        typeof response.data === "string"
-          ? response.data
-          : JSON.stringify(response.data),
+        typeof responseData === "string"
+          ? responseData
+          : JSON.stringify(responseData),
     };
   } catch (error) {
-    const statusCode = error.response?.status || 500;
-    const data = error.response?.data || {
-      error: error.message || "Unknown error",
-    };
+    console.error("Submit to Notion error:", error);
     return {
-      statusCode,
+      statusCode: 500,
       headers: corsHeaders,
-      body: typeof data === "string" ? data : JSON.stringify(data),
+      body: JSON.stringify({
+        error: error.message || "Unknown error",
+      }),
     };
   }
 };
