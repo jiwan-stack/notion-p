@@ -1,0 +1,14 @@
+# Netlify Blobs Configuration
+# You need to get these values from your Netlify dashboard
+
+# Your Netlify site ID (found in Site settings > General > Site information)
+NETLIFY_SITE_ID=your-site-id-here
+
+# Your Netlify personal access token (found in User settings > Applications > Personal access tokens)
+NETLIFY_TOKEN=your-personal-access-token-here
+
+# Notion API Key (for your upload function)
+NOTION_API_KEY=your-notion-api-key-here
+
+# Netlify deployment URL (optional, will be auto-detected)
+URL=https://your-site-name.netlify.app

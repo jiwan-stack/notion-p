@@ -8,6 +8,9 @@
   [functions."check-status-changes"]
   schedule = "*/2 * * * *"
 
+[blobs]
+  directory = ".netlify/blobs"
+
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]
