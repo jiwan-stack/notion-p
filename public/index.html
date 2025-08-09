@@ -393,6 +393,12 @@
               const reader = new FileReader();
               reader.onload = () => {
                 const base64Data = reader.result.split(",")[1]; // Remove data:image/...;base64, prefix
+                console.log(`File ${file.name}:`, {
+                  name: file.name,
+                  type: file.type,
+                  size: file.size,
+                  dataLength: base64Data ? base64Data.length : 0,
+                });
                 resolve({
                   name: file.name,
                   type: file.type,
@@ -433,7 +439,10 @@
           updateProgress(75);
 
           const data = await res.json();
+          console.log("Upload response:", data);
+
           if (!data.uploadedFiles || data.uploadedFiles.length === 0) {
+            console.error("Upload failed - no successful uploads:", data);
             throw new Error("No files were successfully uploaded");
           }
 

@@ -1,4 +1,5 @@
 const axios = require("axios");
+const { getStore } = require("@netlify/blobs");
 
 exports.handler = async (event) => {
   const corsHeaders = {
@@ -44,6 +45,10 @@ exports.handler = async (event) => {
 
     const uploadPromises = files.map(async (file) => {
       try {
+        console.log(
+          `Processing file: ${file.name}, type: ${file.type}, size: ${file.size}`
+        );
+
         const fileName = file.name;
         const mimeType = file.type;
         const fileSize = file.size;
@@ -51,6 +56,9 @@ exports.handler = async (event) => {
         // Check file size (Notion limit: 5MB for free, 5GB for paid)
         const maxSize = 5 * 1024 * 1024; // 5MB
         if (fileSize > maxSize) {
+          console.log(
+            `File ${fileName} exceeds size limit: ${fileSize} > ${maxSize}`
+          );
           return {
             success: false,
             fileName,
@@ -69,6 +77,7 @@ exports.handler = async (event) => {
           "image/svg+xml",
         ];
         if (!allowedTypes.includes(mimeType)) {
+          console.log(`File ${fileName} has unsupported type: ${mimeType}`);
           return {
             success: false,
             fileName,
@@ -76,10 +85,11 @@ exports.handler = async (event) => {
           };
         }
 
-        // Convert file to base64 for temporary hosting
+        // Convert base64 to buffer
         const fileData = file.data; // This should be base64 encoded from frontend
 
         if (!fileData) {
+          console.log(`File ${fileName} has no data`);
           return {
             success: false,
             fileName,
@@ -87,22 +97,66 @@ exports.handler = async (event) => {
           };
         }
 
-        // Create a temporary data URL
-        const tempUrl = `data:${mimeType};base64,${fileData}`;
+        console.log(`File ${fileName} data length: ${fileData.length}`);
+
+        // Convert base64 to buffer
+        const buffer = Buffer.from(fileData, "base64");
+        console.log(`File ${fileName} buffer length: ${buffer.length}`);
+
+        // Create unique filename
+        const timestamp = Date.now();
+        const uniqueFileName = `${timestamp}_${fileName}`;
+        console.log(`File ${fileName} unique name: ${uniqueFileName}`);
+
+        // Store file temporarily in Netlify Blobs
+        const store = getStore("temp-uploads");
+
+        try {
+          console.log(`Storing file ${fileName} in Netlify Blobs...`);
+          await store.set(uniqueFileName, buffer, {
+            contentType: mimeType,
+            access: "public",
+            ttl: 24 * 60 * 60, // 24 hours
+          });
+          console.log(`File ${fileName} stored successfully in Netlify Blobs`);
+        } catch (blobError) {
+          console.error(
+            `Error storing file ${fileName} in Netlify Blobs:`,
+            blobError
+          );
+          return {
+            success: false,
+            fileName,
+            error: "Failed to store file temporarily: " + blobError.message,
+          };
+        }
+
+        // Get public URL - use fallback if URL env var not set
+        const baseUrl =
+          process.env.URL ||
+          process.env.DEPLOY_URL ||
+          "https://notion-p.netlify.app";
+        const publicUrl = `${baseUrl}/.netlify/blobs/temp-uploads/${uniqueFileName}`;
+        console.log(`File ${fileName} temporary URL:`, publicUrl);
 
         // Set expiry time to 24 hours from now
         const expiryTime = new Date(
           Date.now() + 24 * 60 * 60 * 1000
         ).toISOString();
 
-        // Upload to Notion using Direct Upload
+        console.log(
+          `Uploading file ${fileName} to Notion with URL:`,
+          publicUrl
+        );
+
+        // Upload to Notion using Direct Upload API
         const notionResponse = await axios.post(
           "https://api.notion.com/v1/files",
           {
             file: {
               type: "file",
               file: {
-                url: tempUrl,
+                url: publicUrl,
                 expiry_time: expiryTime,
               },
             },
@@ -115,6 +169,11 @@ exports.handler = async (event) => {
             },
             timeout: 30000, // 30 second timeout
           }
+        );
+
+        console.log(
+          `File ${fileName} Notion API response:`,
+          notionResponse.data
         );
 
         return {
