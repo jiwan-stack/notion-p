@@ -47,7 +47,7 @@ export const handler = async (event) => {
 
     console.log(`Attempting to serve file: ${filename}`);
 
-    // Get the file from Netlify Blobs
+    // Get the file from Netlify Blobs (prefer Buffer if available)
     const file = await store.get(filename);
 
     if (!file) {
@@ -61,6 +61,28 @@ export const handler = async (event) => {
     // Get file metadata
     const metadata = await store.getWithMetadata(filename);
 
+    // Ensure base64 body regardless of how the store returns data
+    let base64Body;
+    if (Buffer.isBuffer(file)) {
+      base64Body = file.toString("base64");
+    } else if (file && typeof file === "string") {
+      base64Body = Buffer.from(file).toString("base64");
+    } else if (file && typeof file.arrayBuffer === "function") {
+      const ab = await file.arrayBuffer();
+      base64Body = Buffer.from(new Uint8Array(ab)).toString("base64");
+    } else {
+      base64Body = Buffer.from(String(file)).toString("base64");
+    }
+
+    // Validate base64 body
+    if (!base64Body || typeof base64Body !== "string") {
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "Failed to encode file as base64" }),
+      };
+    }
+
     // Return the file with proper headers
     return {
       statusCode: 200,
@@ -68,10 +90,9 @@ export const handler = async (event) => {
         ...corsHeaders,
         "Content-Type":
           metadata.metadata?.contentType || "application/octet-stream",
-        "Content-Length": file.length,
         "Cache-Control": "public, max-age=3600", // Cache for 1 hour
       },
-      body: file.toString("base64"),
+      body: base64Body,
       isBase64Encoded: true,
     };
   } catch (error) {
