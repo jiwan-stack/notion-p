@@ -512,9 +512,6 @@
 
         const now = new Date();
         const dateReceived = now.toISOString().split("T")[0];
-        const followUp = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0];
 
         let imageFiles = [];
         try {
@@ -537,7 +534,6 @@
               "Issue Type": { select: { name: service } },
               Status: { status: { name: "New" } },
               "Date Received": { date: { start: dateReceived } },
-              "Follow-up Date": { date: { start: followUp } },
               ...(imageFiles.length > 0 && {
                 "Image Upload": {
                   files: imageFiles,
