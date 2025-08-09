@@ -47,8 +47,10 @@ export const handler = async (event) => {
 
     console.log(`Attempting to serve file: ${filename}`);
 
-    // Get the file from Netlify Blobs (prefer Buffer if available)
-    const file = await store.get(filename);
+    // Get the file value and metadata in one call
+    const result = await store.getWithMetadata(filename);
+    const file = result?.value ?? result;
+    const meta = result?.metadata ?? {};
 
     if (!file) {
       return {
@@ -57,9 +59,6 @@ export const handler = async (event) => {
         body: JSON.stringify({ error: "File not found" }),
       };
     }
-
-    // Get file metadata
-    const metadata = await store.getWithMetadata(filename);
 
     // Ensure base64 body regardless of how the store returns data
     let base64Body;
@@ -83,14 +82,30 @@ export const handler = async (event) => {
       };
     }
 
+    // Guess content-type if missing
+    const lower = filename.toLowerCase();
+    const guessFromExt = lower.endsWith(".png")
+      ? "image/png"
+      : lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+      ? "image/jpeg"
+      : lower.endsWith(".gif")
+      ? "image/gif"
+      : lower.endsWith(".webp")
+      ? "image/webp"
+      : lower.endsWith(".svg")
+      ? "image/svg+xml"
+      : "application/octet-stream";
+    const contentType =
+      meta.contentType || meta["content-type"] || guessFromExt;
+
     // Return the file with proper headers
     return {
       statusCode: 200,
       headers: {
         ...corsHeaders,
-        "Content-Type":
-          metadata.metadata?.contentType || "application/octet-stream",
+        "Content-Type": contentType,
         "Cache-Control": "public, max-age=3600", // Cache for 1 hour
+        "Content-Disposition": `inline; filename="${filename}"`,
       },
       body: base64Body,
       isBase64Encoded: true,
