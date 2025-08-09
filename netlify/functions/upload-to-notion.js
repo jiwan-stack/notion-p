@@ -1,7 +1,15 @@
-import axios from "axios";
 import { getStore } from "@netlify/blobs";
 
+// Dynamic import for axios to avoid module resolution issues
+let axios;
+
 export const handler = async (event) => {
+  // Dynamic import axios
+  if (!axios) {
+    const axiosModule = await import("axios");
+    axios = axiosModule.default;
+  }
+
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":

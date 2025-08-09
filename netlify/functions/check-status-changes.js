@@ -1,5 +1,7 @@
-import axios from "axios";
 import nodemailer from "nodemailer";
+
+// Dynamic import for axios to avoid module resolution issues
+let axios;
 
 // Configure Nodemailer transporter
 const createTransporter = () => {
@@ -159,6 +161,12 @@ const checkStatusAndNotify = async (page, notionApiKey) => {
 };
 
 export const handler = async (event, context) => {
+  // Dynamic import axios
+  if (!axios) {
+    const axiosModule = await import("axios");
+    axios = axiosModule.default;
+  }
+
   // Check if this is a scheduled function trigger or manual trigger
   const isScheduled =
     event.headers?.["x-netlify-scheduled"] ||

@@ -1,4 +1,5 @@
-import axios from "axios";
+// Dynamic import for axios to avoid module resolution issues
+let axios;
 
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
@@ -12,6 +13,12 @@ const getHeader = (headers, name) => {
 };
 
 export const handler = async (event) => {
+  // Dynamic import axios
+  if (!axios) {
+    const axiosModule = await import("axios");
+    axios = axiosModule.default;
+  }
+
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
