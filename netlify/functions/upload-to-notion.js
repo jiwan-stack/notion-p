@@ -35,17 +35,7 @@ export const handler = async (event) => {
   }
 
   try {
-    const { files, clientDatabaseId } = JSON.parse(event.body);
-
-    // Choose database ID: prefer client-provided, else env var
-    const databaseId = clientDatabaseId || process.env.VITE_NOTION_DATABASE_ID;
-    if (!databaseId) {
-      return {
-        statusCode: 400,
-        headers: corsHeaders,
-        body: JSON.stringify({ error: "No Notion database ID provided" }),
-      };
-    }
+    const { files } = JSON.parse(event.body);
 
     if (!files || !Array.isArray(files) || files.length === 0) {
       return {
@@ -176,124 +166,17 @@ export const handler = async (event) => {
           Date.now() + 24 * 60 * 60 * 1000
         ).toISOString();
 
-        console.log(`Creating Notion page with file attachment: ${publicUrl}`);
-
-        // Instead of using /v1/files (which is for Direct Upload),
-        // we'll create a page with the file attached using the public URL
-        // This is the correct way according to Notion's documentation
-
-        // First, let's try to get the database schema to see what properties exist
-        console.log(`Getting database schema for: ${databaseId}`);
-
-        const dbResponse = await fetch(
-          `https://api.notion.com/v1/databases/${databaseId}`,
-          {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${notionApiKey}`,
-              "Notion-Version": "2022-06-28",
-            },
-          }
-        );
-
-        if (!dbResponse.ok) {
-          const errorText = await dbResponse.text();
-          console.error(
-            `Failed to get database schema: ${dbResponse.status} ${dbResponse.statusText} - ${errorText}`
-          );
-          throw new Error(
-            `Failed to get database schema: ${dbResponse.status} - ${errorText}`
-          );
-        }
-
-        const dbData = await dbResponse.json();
-        console.log(`Database properties:`, Object.keys(dbData.properties));
-
-        // Find the first title property and files property
-        const titleProperty = Object.keys(dbData.properties).find(
-          (key) => dbData.properties[key].type === "title"
-        );
-
-        const filesProperty = Object.keys(dbData.properties).find(
-          (key) => dbData.properties[key].type === "files"
-        );
-
-        if (!titleProperty) {
-          throw new Error("No title property found in database");
-        }
-
-        console.log(
-          `Using title property: ${titleProperty}, files property: ${
-            filesProperty || "none"
-          }`
-        );
-
-        // Create the request body with the actual property names from the database
-        const requestBody = {
-          parent: { database_id: databaseId },
-          properties: {
-            [titleProperty]: {
-              title: [
-                {
-                  text: {
-                    content: fileName,
-                  },
-                },
-              ],
-            },
-          },
-        };
-
-        // Only add files property if it exists
-        if (filesProperty) {
-          requestBody.properties[filesProperty] = {
-            files: [
-              {
-                name: fileName,
-                type: "external",
-                external: {
-                  url: publicUrl,
-                },
-              },
-            ],
-          };
-        } else {
-          console.log(
-            `No files property found, file will be accessible via URL: ${publicUrl}`
-          );
-        }
-
-        console.log(
-          `Full Notion API request body:`,
-          JSON.stringify(requestBody, null, 2)
-        );
-
-        // Create a page with the file attached
-        const notionResponse = await fetch("https://api.notion.com/v1/pages", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${notionApiKey}`,
-            "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(requestBody),
-        });
-
-        if (!notionResponse.ok) {
-          const errorText = await notionResponse.text();
-          console.error(`Notion API error for ${fileName}:`, errorText);
-          throw new Error(
-            `Notion API error: ${notionResponse.status} ${notionResponse.statusText}`
-          );
-        }
-
-        const notionData = await notionResponse.json();
-        console.log(`File ${fileName} Notion page created:`, notionData);
-
+        // Do not create a Notion page here. Return a file object that submit-to-notion can use
         return {
           success: true,
           fileName,
-          notionPage: notionData,
+          publicUrl,
+          expiryTime,
+          fileForNotion: {
+            name: fileName,
+            type: "external",
+            external: { url: publicUrl },
+          },
           originalFile: {
             name: fileName,
             type: mimeType,
