@@ -35,7 +35,7 @@ export const handler = async (event) => {
   }
 
   try {
-    const { files } = JSON.parse(event.body);
+    const { files, clientDatabaseId } = JSON.parse(event.body);
 
     if (!files || !Array.isArray(files) || files.length === 0) {
       return {
@@ -173,12 +173,10 @@ export const handler = async (event) => {
         // This is the correct way according to Notion's documentation
 
         // First, let's try to get the database schema to see what properties exist
-        console.log(
-          `Getting database schema for: ${process.env.VITE_NOTION_DATABASE_ID}`
-        );
+        console.log(`Getting database schema for: ${clientDatabaseId}`);
 
         const dbResponse = await fetch(
-          `https://api.notion.com/v1/databases/${process.env.VITE_NOTION_DATABASE_ID}`,
+          `https://api.notion.com/v1/databases/${clientDatabaseId}`,
           {
             method: "GET",
             headers: {
@@ -221,7 +219,7 @@ export const handler = async (event) => {
 
         // Create the request body with the actual property names from the database
         const requestBody = {
-          parent: { database_id: process.env.VITE_NOTION_DATABASE_ID },
+          parent: { database_id: clientDatabaseId },
           properties: {
             [titleProperty]: {
               title: [
