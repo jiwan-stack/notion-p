@@ -151,7 +151,9 @@ export const handler = async (event) => {
           process.env.URL ||
           process.env.DEPLOY_URL ||
           "https://notion-p.netlify.app";
-        const publicUrl = `${baseUrl}/.netlify/blobs/temp-uploads/${uniqueFileName}`;
+
+        // For Netlify Blobs, the URL structure is: /api/blobs/{store-name}/{key}
+        const publicUrl = `${baseUrl}/api/blobs/temp-uploads/${uniqueFileName}`;
         console.log(`File ${fileName} temporary URL:`, publicUrl);
 
         // Set expiry time to 24 hours from now
@@ -162,6 +164,22 @@ export const handler = async (event) => {
         console.log(
           `Uploading file ${fileName} to Notion with URL:`,
           publicUrl
+        );
+        console.log(
+          `Full Notion API request body:`,
+          JSON.stringify(
+            {
+              file: {
+                type: "file",
+                file: {
+                  url: publicUrl,
+                  expiry_time: expiryTime,
+                },
+              },
+            },
+            null,
+            2
+          )
         );
 
         // Upload to Notion using Direct Upload API with fetch
