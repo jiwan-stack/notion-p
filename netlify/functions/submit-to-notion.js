@@ -22,14 +22,10 @@ exports.handler = async (event) => {
 
   // Handle preflight requests
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: corsHeaders,
-      body: "",
-    };
+    return { statusCode: 200, headers: corsHeaders, body: "" };
   }
 
-  const notionApiKey = process.env.VITE_NOTION_API_KEY;
+  const notionApiKey = process.env.NOTION_API_KEY;
   if (!notionApiKey) {
     return {
       statusCode: 500,
@@ -48,10 +44,9 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: "Only Notion /v1 endpoints are allowed" }),
     };
   }
+
   const targetUrl = `https://api.notion.com${path}`;
-
   const method = (event.httpMethod || "POST").toUpperCase();
-
   const requestContentType =
     getHeader(event.headers, "content-type") || "application/json";
 
@@ -64,19 +59,19 @@ exports.handler = async (event) => {
   try {
     const hasBodyMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
     let data = undefined;
+
     if (hasBodyMethod && event.body) {
-      const isBase64Encoded = !!event.isBase64Encoded;
-      const rawBody = isBase64Encoded
+      const rawBody = event.isBase64Encoded
         ? Buffer.from(event.body, "base64").toString()
         : event.body;
-      if (requestContentType.includes("application/json")) {
-        data = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
-      } else {
-        data = rawBody;
-      }
+      data = requestContentType.includes("application/json")
+        ? typeof rawBody === "string"
+          ? JSON.parse(rawBody)
+          : rawBody
+        : rawBody;
     }
 
-    // Auto-inject default parent.database_id for creating pages when not provided
+    // If creating a page and no parent is set, inject the database_id from the client body
     if (
       requestContentType.includes("application/json") &&
       method === "POST" &&
@@ -89,22 +84,25 @@ exports.handler = async (event) => {
         (data.parent.database_id || data.parent.page_id);
 
       if (!hasParentFromClient) {
-        const defaultDatabaseId = process.env.VITE_NOTION_DATABASE_ID;
-        if (!defaultDatabaseId) {
+        if (!data || typeof data !== "object") data = {};
+
+        if (!data.clientDatabaseId) {
           return {
             statusCode: 400,
             headers: corsHeaders,
             body: JSON.stringify({
-              error:
-                "Missing parent in request and VITE_NOTION_DATABASE_ID is not set on server",
+              error: "Missing clientDatabaseId in request body",
             }),
           };
         }
-        if (!data || typeof data !== "object") data = {};
+
         data.parent = {
           ...(data.parent || {}),
-          database_id: defaultDatabaseId,
+          database_id: data.clientDatabaseId,
         };
+
+        // Remove helper field so it’s not sent to Notion
+        delete data.clientDatabaseId;
       }
     }
 
@@ -120,22 +118,23 @@ exports.handler = async (event) => {
       validateStatus: () => true,
     });
 
-    const responseBody =
-      typeof response.data === "string"
-        ? response.data
-        : JSON.stringify(response.data);
-
     return {
       statusCode: response.status,
       headers: corsHeaders,
-      body: responseBody,
+      body:
+        typeof response.data === "string"
+          ? response.data
+          : JSON.stringify(response.data),
     };
   } catch (error) {
     const statusCode = error.response?.status || 500;
     const data = error.response?.data || {
       error: error.message || "Unknown error",
     };
-    const body = typeof data === "string" ? data : JSON.stringify(data);
-    return { statusCode, headers: corsHeaders, body };
+    return {
+      statusCode,
+      headers: corsHeaders,
+      body: typeof data === "string" ? data : JSON.stringify(data),
+    };
   }
 };

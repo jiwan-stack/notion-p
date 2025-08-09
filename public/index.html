@@ -1,259 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Netlify Functions - Notion Integration</title>
-    <style>
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          sans-serif;
-        max-width: 600px;
-        margin: 50px auto;
-        padding: 20px;
-        line-height: 1.6;
-        color: #333;
-      }
-      .container {
-        background: #f8f9fa;
-        padding: 30px;
-        border-radius: 8px;
-        border-left: 4px solid #00ad9f;
-      }
-      .status {
-        background: #d4edda;
-        color: #155724;
-        padding: 15px;
-        border-radius: 4px;
-        margin: 20px 0;
-      }
-      .endpoint {
-        background: #e2e3e5;
-        padding: 10px;
-        border-radius: 4px;
-        font-family: monospace;
-        margin: 10px 0;
-      }
-      h1 {
-        color: #00ad9f;
-        margin-bottom: 20px;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <h1>Service Request</h1>
-      <form id="service-form">
-        <div>
-          <label for="name"><strong>Name</strong></label
-          ><br />
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            placeholder="Your full name"
-            style="width: 100%; padding: 8px; margin-top: 6px"
-          />
-        </div>
-        <div style="margin-top: 12px">
-          <label for="email"><strong>Email</strong></label
-          ><br />
-          <input
-            id="email"
-            name="email"
-            type="email"
-            required
-            placeholder="you@example.com"
-            style="width: 100%; padding: 8px; margin-top: 6px"
-          />
-        </div>
-        <div style="margin-top: 12px">
-          <label for="service"><strong>Service</strong></label
-          ><br />
-          <select
-            id="service"
-            name="service"
-            required
-            style="width: 100%; padding: 8px; margin-top: 6px"
-          >
-            <option value="" disabled selected>Select a service</option>
-            <option value="Website Development">Website Development</option>
-            <option value="E-commerce">E-commerce</option>
-            <option value="API Integration">API Integration</option>
-            <option value="Consulting">Consulting</option>
-            <option value="UI/UX Design">UI/UX Design</option>
-            <option value="Other">Other</option>
-          </select>
-        </div>
-        <div style="margin-top: 12px">
-          <label for="budget"><strong>Budget</strong></label
-          ><br />
-          <select
-            id="budget"
-            name="budget"
-            required
-            style="width: 100%; padding: 8px; margin-top: 6px"
-          >
-            <option value="" disabled selected>Select a budget</option>
-            <option value="<100">Under $1,00</option>
-            <option value="100-500">$1,00 - $5,00</option>
-            <option value="500-1000">$5,00 - $10,00</option>
-            <option value=">1000">Over $10,00</option>
-          </select>
-        </div>
-        <div style="margin-top: 12px">
-          <label for="details"><strong>Project Details</strong></label
-          ><br />
-          <textarea
-            id="details"
-            name="details"
-            required
-            placeholder="Tell us about your project"
-            rows="5"
-            style="width: 100%; padding: 8px; margin-top: 6px"
-          ></textarea>
-        </div>
-        <div style="margin-top: 16px">
-          <button
-            id="submitBtn"
-            type="submit"
-            style="
-              background: #00ad9f;
-              color: #fff;
-              border: none;
-              padding: 10px 16px;
-              border-radius: 4px;
-              cursor: pointer;
-            "
-          >
-            Submit Request
-          </button>
-        </div>
-      </form>
-      <div id="result" class="status" style="display: none"></div>
-    </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warranty Service Request</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+    }
+    .container {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 8px;
+      border-left: 4px solid #007bff;
+    }
+    .status {
+      padding: 15px;
+      border-radius: 4px;
+      margin: 20px 0;
+    }
+    h1 {
+      color: #007bff;
+    }
+    label {
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 8px;
+      margin-top: 6px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>1-Year Warranty Service Request</h1>
+    <form id="service-form">
+      <div>
+        <label for="name">Full Name</label>
+        <input id="name" name="name" type="text" required placeholder="Your full name" />
+      </div>
 
-    <script>
-      const form = document.getElementById("service-form");
-      const resultEl = document.getElementById("result");
-      const submitBtn = document.getElementById("submitBtn");
+      <div style="margin-top: 12px">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required placeholder="you@example.com" />
+      </div>
 
-      function showResult(message, ok) {
-        resultEl.style.display = "block";
-        resultEl.style.background = ok ? "#d4edda" : "#f8d7da";
-        resultEl.style.color = ok ? "#155724" : "#721c24";
-        resultEl.textContent = message;
+      <div style="margin-top: 12px">
+        <label for="product">Product Name</label>
+        <input id="product" name="product" type="text" required placeholder="e.g. Washing Machine Model X" />
+      </div>
+
+      <div style="margin-top: 12px">
+        <label for="serial">Serial Number</label>
+        <input id="serial" name="serial" type="text" required placeholder="e.g. SN12345678" />
+      </div>
+
+      <div style="margin-top: 12px">
+        <label for="purchaseDate">Purchase Date</label>
+        <input id="purchaseDate" name="purchaseDate" type="date" required />
+      </div>
+
+      <div style="margin-top: 12px">
+        <label for="service">Issue Type</label>
+        <select id="service" name="service" required>
+          <option value="" disabled selected>Select issue</option>
+          <option value="Defective Part">Defective Part</option>
+          <option value="Not Functioning">Not Functioning</option>
+          <option value="Performance Issue">Performance Issue</option>
+          <option value="Physical Damage (Covered)">Physical Damage (Covered)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div style="margin-top: 12px">
+        <label for="details">Issue Details</label>
+        <textarea id="details" name="details" required placeholder="Describe the problem" rows="5"></textarea>
+      </div>
+      <div style="margin-top: 12px">
+        <label for="image">Upload Image</label>
+        <input id="image" name="image" type="file" accept="image/*" capture="environment" />
+      </div>
+
+      <div style="margin-top: 16px">
+        <button id="submitBtn" type="submit">Submit Warranty Request</button>
+      </div>
+    </form>
+    <div id="result" class="status" style="display: none"></div>
+  </div>
+
+  <script>
+    const CLIENT_DATABASE_ID = "24a30c0a61cd80869243f2beb52b019c";
+    const form = document.getElementById("service-form");
+    const resultEl = document.getElementById("result");
+    const submitBtn = document.getElementById("submitBtn");
+
+    function showResult(message, ok) {
+      resultEl.style.display = "block";
+      resultEl.style.background = ok ? "#d4edda" : "#f8d7da";
+      resultEl.style.color = ok ? "#155724" : "#721c24";
+      resultEl.textContent = message;
+    }
+
+    // Upload helper: expects a Netlify function at /.netlify/functions/upload-image
+    async function uploadToNetlify(file) {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await fetch("https://notion-p.netlify.app/.netlify/functions/upload-image", {
+        method: "POST",
+        body: formData
+      });
+
+      if (!res.ok) {
+        // try to extract text for debugging
+        let text;
+        try { text = await res.text(); } catch { text = res.statusText; }
+        throw new Error("Upload failed: " + text);
       }
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        submitBtn.disabled = true;
-        showResult("Submitting…", true);
+      const data = await res.json();
+      if (!data.imageUrl) throw new Error("Upload function did not return imageUrl");
+      return data.imageUrl;
+    }
 
-        const name = document.getElementById("name").value.trim();
-        const email = document.getElementById("email").value.trim();
-        const service = document.getElementById("service").value;
-        const budget = document.getElementById("budget").value;
-        const details = document.getElementById("details").value.trim();
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      submitBtn.disabled = true;
+      showResult("Submitting…", true);
 
-        const now = new Date();
-        const dateReceived = now.toISOString().split("T")[0];
-        const followUp = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-          .toISOString()
-          .split("T")[0];
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const product = document.getElementById("product").value.trim();
+      const serial = document.getElementById("serial").value.trim();
+      const purchaseDate = document.getElementById("purchaseDate").value;
+      const service = document.getElementById("service").value;
+      const details = document.getElementById("details").value.trim();
+      const imageFile = document.getElementById("image").files[0];
 
+      const now = new Date();
+      const dateReceived = now.toISOString().split("T")[0];
+      const followUp = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0];
+
+      let imageUrl = null;
+      try {
+        if (imageFile) {
+          showResult("Uploading image…", true);
+          imageUrl = await uploadToNetlify(imageFile);
+        }
+
+        // Build the Notion payload (keeps your structure)
         const body = {
-          // parent is omitted to allow server to inject VITE_NOTION_DATABASE_ID
+          clientDatabaseId: CLIENT_DATABASE_ID,
           properties: {
-            // Title column
-            "Client Name": {
-              title: [
-                {
-                  text: { content: name },
-                },
-              ],
-            },
-            // Email column
-            Email: { email },
-            // Rich text column
-            "Project Details": {
-              rich_text: [
-                {
-                  text: { content: details },
-                },
-              ],
-            },
-            // Select columns
-            "Service Type": {
-              select: { name: service },
-            },
-            "Budget Range": {
-              select: { name: budget },
-            },
-            // Status (status-type)
-            Status: {
-              status: { name: "New" },
-            },
-            // Date columns
-            "Date Received": {
-              date: { start: dateReceived },
-            },
-            "Follow-up Date": {
-              date: { start: followUp },
-            },
+            "Client Name": { title: [{ text: { content: name } }] },
+            "Email": { email },
+            "Product Name": { rich_text: [{ text: { content: product } }] },
+            "Serial Number": { rich_text: [{ text: { content: serial } }] },
+            "Purchase Date": { date: { start: purchaseDate } },
+            "Project Details": { rich_text: [{ text: { content: details } }] },
+            "Service Type": { select: { name: service } },
+            "Budget Range": { select: { name: "Warranty" } },
+            "Status": { status: { name: "New" } },
+            "Date Received": { date: { start: dateReceived } },
+            "Follow-up Date": { date: { start: followUp } },
+            // UPDATED: include files array so Notion displays the image
+            ...(imageUrl && {
+              "Image Upload": {
+                files: [
+                  {
+                    name: imageFile.name,
+                    external: { url: imageUrl }
+                  }
+                ]
+              }
+            }),
           },
         };
 
-        try {
-          const res = await fetch(
-            "https://notion-p.netlify.app/.netlify/functions/submit-to-notion?path=/v1/pages",
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Accept: "application/json",
-              },
-              body: JSON.stringify(body),
-            }
-          );
-
-          if (!res.ok) {
-            const errorText = await res.text();
-            let errorData;
-            try {
-              errorData = JSON.parse(errorText);
-            } catch {
-              errorData = { error: errorText };
-            }
-            throw new Error(
-              errorData.error ||
-                errorData.message ||
-                `HTTP ${res.status}: ${res.statusText}`
-            );
+        // send to your existing submit-to-notion function
+        const res = await fetch(
+          "https://notion-p.netlify.app/.netlify/functions/submit-to-notion?path=/v1/pages",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+            },
+            body: JSON.stringify(body),
           }
+        );
 
-          const text = await res.text();
-          let data;
+        if (!res.ok) {
+          const errorText = await res.text();
+          let errorData;
           try {
-            data = JSON.parse(text);
+            errorData = JSON.parse(errorText);
           } catch {
-            data = { raw: text };
+            errorData = { error: errorText };
           }
-
-          if (data.error) {
-            throw new Error(data.error);
-          }
-
-          showResult("Request submitted successfully!", true);
-          form.reset();
-        } catch (err) {
-          console.error("Submission error:", err);
-          showResult(`Error: ${err.message}`, false);
-        } finally {
-          submitBtn.disabled = false;
+          throw new Error(errorData.error || errorData.message || `HTTP ${res.status}`);
         }
-      });
-    </script>
-  </body>
+
+        const text = await res.text();
+        let data;
+        try {
+          data = JSON.parse(text);
+        } catch {
+          data = { raw: text };
+        }
+
+        if (data.error) throw new Error(data.error);
+
+        showResult("Request submitted successfully!", true);
+        form.reset();
+      } catch (err) {
+        console.error("Submission error:", err);
+        showResult(`Error: ${err.message}`, false);
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  </script>
+</body>
 </html>
