@@ -80,7 +80,7 @@ The service now supports **direct image uploads to Notion** without requiring ex
 ### API Endpoint
 
 ```
-POST /.netlify/functions/upload-to-notion
+POST /.netlify/functions/upload-image
 ```
 
 For detailed documentation, see [DIRECT_UPLOAD_README.md](./DIRECT_UPLOAD_README.md).

@@ -181,15 +181,17 @@
           <label for="service">Issue Type</label>
           <select id="service" name="service" required>
             <option value="" disabled selected>Select issue</option>
-            <option value="Mechanical">Mechanical</option>
-            <option value="Electrical">Electrical</option>
-            <option value="Software">Software</option>
-            <option value="Cosmetic">Cosmetic</option>
-            <option value="Accessory">Accessory</option>
-            <option value="Documentation">Documentation</option>
+            <option value="Won't Turn On">Won't Turn On</option>
+            <option value="Makes Strange Noise">Makes Strange Noise</option>
+            <option value="Physical Damage">Physical Damage</option>
+            <option value="Software Problem">Software Problem</option>
+            <option value="Missing Parts">Missing Parts</option>
+            <option value="Product Leaking">Product Leaking</option>
+            <option value="Display Issues">Display Issues</option>
+            <option value="Connection Problems">Connection Problems</option>
+            <option value="Battery Problems">Battery Problems</option>
+            <option value="Broken Accessory">Broken Accessory</option>
             <option value="Other">Other</option>
-            <option value="Defective Part">Defective Part</option>
-            <option value="Not Functioning">Not Functioning</option>
           </select>
         </div>
 
@@ -418,7 +420,7 @@
 
           // Upload directly to Notion
           const res = await fetch(
-            `${BASE_URL}.netlify/functions/upload-to-notion`,
+            `${BASE_URL}.netlify/functions/upload-image`,
             {
               method: "POST",
               headers: {
