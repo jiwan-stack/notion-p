@@ -1,40 +1,25 @@
-// netlify/functions/upload-image.js
-import fs from "fs";
-import path from "path";
-import formidable from "formidable";
+import Busboy from "busboy";
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
+export async function handler(event) {
+  return new Promise((resolve, reject) => {
+    const busboy = Busboy({ headers: event.headers });
+    const files = [];
 
-export default async (req, res) => {
-  if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const form = formidable({
-    multiples: true, // ✅ allow multiple files
-    uploadDir: path.join(process.cwd(), "public/uploads"),
-    keepExtensions: true,
-  });
-
-  try {
-    const filesData = await new Promise((resolve, reject) => {
-      form.parse(req, (err, fields, files) => {
-        if (err) reject(err);
-        resolve(files.file); // "file" is the name in <input name="file" />
+    busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+      const chunks = [];
+      file.on("data", (data) => chunks.push(data));
+      file.on("end", () => {
+        files.push({ filename, content: Buffer.concat(chunks), mimetype });
       });
     });
 
-    const uploadedFiles = Array.isArray(filesData) ? filesData : [filesData];
-    const fileUrls = uploadedFiles.map(
-      (file) => `/uploads/${path.basename(file.filepath)}`
-    );
+    busboy.on("finish", () => {
+      resolve({
+        statusCode: 200,
+        body: JSON.stringify({ files }),
+      });
+    });
 
-    res.status(200).json({ urls: fileUrls });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
+    busboy.end(Buffer.from(event.body, "base64"));
+  });
+}

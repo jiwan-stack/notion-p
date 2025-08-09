@@ -92,9 +92,11 @@
         <label for="details">Issue Details</label>
         <textarea id="details" name="details" required placeholder="Describe the problem" rows="5"></textarea>
       </div>
+
+      <!-- Updated: multiple images -->
       <div style="margin-top: 12px">
-        <label for="image">Upload Image</label>
-        <input id="image" name="image" type="file" accept="image/*" capture="environment" />
+        <label for="image">Upload Images</label>
+        <input id="image" name="image" type="file" accept="image/*" capture="environment" multiple />
       </div>
 
       <div style="margin-top: 16px">
@@ -106,6 +108,7 @@
 
   <script>
     const CLIENT_DATABASE_ID = "24a30c0a61cd80869243f2beb52b019c";
+    const BASE_URL= "https://notion-p.netlify.app/"
     const form = document.getElementById("service-form");
     const resultEl = document.getElementById("result");
     const submitBtn = document.getElementById("submitBtn");
@@ -117,26 +120,26 @@
       resultEl.textContent = message;
     }
 
-    // Upload helper: expects a Netlify function at /.netlify/functions/upload-image
-    async function uploadToNetlify(file) {
+    async function uploadToNetlify(files) {
       const formData = new FormData();
-      formData.append("file", file);
+      for (const file of files) {
+        formData.append("file", file);
+      }
 
-      const res = await fetch("https://notion-p.netlify.app/.netlify/functions/upload-image", {
+      const res = await fetch(`${BASE_URL}.netlify/functions/upload-image`, {
         method: "POST",
         body: formData
       });
 
       if (!res.ok) {
-        // try to extract text for debugging
         let text;
         try { text = await res.text(); } catch { text = res.statusText; }
         throw new Error("Upload failed: " + text);
       }
 
       const data = await res.json();
-      if (!data.imageUrl) throw new Error("Upload function did not return imageUrl");
-      return data.imageUrl;
+      if (!data.urls) throw new Error("Upload function did not return URLs");
+      return data.urls;
     }
 
     form.addEventListener("submit", async (e) => {
@@ -151,7 +154,7 @@
       const purchaseDate = document.getElementById("purchaseDate").value;
       const service = document.getElementById("service").value;
       const details = document.getElementById("details").value.trim();
-      const imageFile = document.getElementById("image").files[0];
+      const imageFiles = document.getElementById("image").files;
 
       const now = new Date();
       const dateReceived = now.toISOString().split("T")[0];
@@ -159,14 +162,13 @@
         .toISOString()
         .split("T")[0];
 
-      let imageUrl = null;
+      let imageUrls = [];
       try {
-        if (imageFile) {
-          showResult("Uploading image…", true);
-          imageUrl = await uploadToNetlify(imageFile);
+        if (imageFiles.length > 0) {
+          showResult("Uploading images…", true);
+          imageUrls = await uploadToNetlify(imageFiles);
         }
 
-        // Build the Notion payload (keeps your structure)
         const body = {
           clientDatabaseId: CLIENT_DATABASE_ID,
           properties: {
@@ -181,32 +183,25 @@
             "Status": { status: { name: "New" } },
             "Date Received": { date: { start: dateReceived } },
             "Follow-up Date": { date: { start: followUp } },
-            // UPDATED: include files array so Notion displays the image
-            ...(imageUrl && {
+            ...(imageUrls.length > 0 && {
               "Image Upload": {
-                files: [
-                  {
-                    name: imageFile.name,
-                    external: { url: imageUrl }
-                  }
-                ]
+                files: imageUrls.map((url, idx) => ({
+                  name: imageFiles[idx].name,
+                  external: { url }
+                }))
               }
             }),
           },
         };
 
-        // send to your existing submit-to-notion function
-        const res = await fetch(
-          "https://notion-p.netlify.app/.netlify/functions/submit-to-notion?path=/v1/pages",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Accept: "application/json",
-            },
-            body: JSON.stringify(body),
-          }
-        );
+        const res = await fetch(`${BASE_URL}.netlify/functions/submit-to-notion?path=/v1/pages`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify(body),
+        });
 
         if (!res.ok) {
           const errorText = await res.text();
