@@ -1,5 +1,3 @@
-// Use native fetch instead of axios to avoid module compatibility issues
-
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
   const lowercaseName = name.toLowerCase();
@@ -57,7 +55,7 @@ export const handler = async (event) => {
   };
 
   try {
-    const hasBodyMethod = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+    const hasBodyMethod = ["GET","POST", "PUT", "PATCH", "DELETE"].includes(method);
     let data = undefined;
 
     if (hasBodyMethod && event.body) {
