@@ -1,3 +1,5 @@
+import { NOTION_DATABASE_ID, NOTION_API_VERSION } from "./config.js";
+
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
   const lowercaseName = name.toLowerCase();
@@ -50,12 +52,14 @@ export const handler = async (event) => {
 
   const upstreamHeaders = {
     Authorization: `Bearer ${notionApiKey}`,
-    "Notion-Version": query.version || "2022-06-28",
+    "Notion-Version": query.version || NOTION_API_VERSION,
     "Content-Type": requestContentType,
   };
 
   try {
-    const hasBodyMethod = ["GET","POST", "PUT", "PATCH", "DELETE"].includes(method);
+    const hasBodyMethod = ["GET", "POST", "PUT", "PATCH", "DELETE"].includes(
+      method
+    );
     let data = undefined;
 
     if (hasBodyMethod && event.body) {
@@ -69,7 +73,7 @@ export const handler = async (event) => {
         : rawBody;
     }
 
-    // If creating a page and no parent is set, inject the database_id from the client body
+    // If creating a page and no parent is set, inject the database_id from shared config
     if (
       requestContentType.includes("application/json") &&
       method === "POST" &&
@@ -84,23 +88,14 @@ export const handler = async (event) => {
       if (!hasParentFromClient) {
         if (!data || typeof data !== "object") data = {};
 
-        if (!data.clientDatabaseId) {
-          return {
-            statusCode: 400,
-            headers: corsHeaders,
-            body: JSON.stringify({
-              error: "Missing clientDatabaseId in request body",
-            }),
-          };
-        }
+        // No validation needed - using shared database ID
 
         data.parent = {
           ...(data.parent || {}),
-          database_id: data.clientDatabaseId,
+          database_id: NOTION_DATABASE_ID,
         };
 
         // Remove helper field so it’s not sent to Notion
-        delete data.clientDatabaseId;
       }
     }
 

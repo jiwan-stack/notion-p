@@ -1,129 +1,167 @@
 # Notion Proxy Service with Direct File Upload
 
-A Netlify function that acts as a proxy to the Notion API, with automatic database ID injection for creating pages and **direct image uploads to Notion**.
+A comprehensive Netlify-based service that acts as a proxy to the Notion API, with automatic database ID injection for creating pages, **direct image uploads to Notion**, and automated status change notifications.
 
-## Local Development
+## 🚀 Features
 
-1. Install dependencies:
+- **Notion API Proxy**: Secure proxy service for Notion API calls with automatic database ID injection
+- **Direct File Upload**: Upload images directly to Notion using their Direct Upload API
+- **Automated Notifications**: Scheduled function that sends email notifications when project status changes
+- **Service Request Form**: Complete web form for collecting service requests with file attachments
+- **Netlify Blobs Integration**: Temporary file storage with automatic cleanup
+- **CORS Support**: Full CORS support for both local development and production
+- **Optimized Configuration**: Shared database ID configuration for consistent behavior across functions
+
+## 🏗️ Project Structure
+
+```
+notion-p/
+├── netlify/
+│   ├── functions/
+│   │   ├── config.js                # Shared configuration constants
+│   │   ├── submit-to-notion.js      # Notion API proxy with database injection
+│   │   ├── upload-image.js          # Direct image upload to Notion
+│   │   ├── serve-blob.js            # Serve temporary files from Netlify Blobs
+│   │   └── check-status-changes.js  # Automated status change notifications
+│   └── netlify.toml                 # Netlify configuration
+├── public/
+│   ├── index.html                   # Service request form
+│   └── stackseekers.jpeg            # Branding image
+├── package.json                     # Dependencies and scripts
+└── README.md                        # This file
+```
+
+## 🛠️ Installation & Setup
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- Netlify account
+- Notion integration token
+- SMTP email service (for notifications)
+
+### 1. Clone and Install
 
 ```bash
+git clone <your-repo-url>
+cd notion-p
 npm install
 ```
 
-2. Install Netlify CLI globally (if not already installed):
+### 2. Install Netlify CLI
 
 ```bash
 npm install -g netlify-cli
 ```
 
-3. Set up environment variables in a `.env` file:
+### 3. Environment Variables
+
+Create a `.env` file in the project root:
 
 ```bash
-VITE_NOTION_API_KEY=your_notion_integration_token
-VITE_NOTION_DATABASE_ID=your_notion_database_id
+# Notion Configuration
+NOTION_API_KEY=your_notion_integration_token
+
+# Netlify Configuration (auto-configured with netlify dev)
+NETLIFY_SITE_ID=your_netlify_site_id
+NETLIFY_TOKEN=your_netlify_personal_access_token
+
+# Email Configuration (for status notifications)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-password
+GMAIL_APP_PASSWORD=your-gmail-app-password
+FROM_EMAIL=noreply@yourdomain.com
 ```
 
-4. Start the development server:
+### 4. Configure Database ID
+
+Update the database ID in the shared configuration file:
+
+```javascript
+// In netlify/functions/config.js
+export const NOTION_DATABASE_ID = "your-actual-database-id-here";
+```
+
+Replace `"your-actual-database-id-here"` with your actual Notion database ID. This ID is used by both the API proxy function and the status change notification function.
+
+### 5. Start Development Server
 
 ```bash
 npm run dev
 ```
 
-This will start the Netlify dev server on `http://localhost:8888` and you can test the form locally.
+This will start the Netlify dev server on `http://localhost:8888` and automatically configure all required environment variables.
 
-## CORS Issues
+## 🔧 API Endpoints
 
-If you're getting CORS errors when testing locally:
+### 1. Notion API Proxy
 
-1. Make sure you're running the Netlify dev server (`npm run dev`)
-2. Access the site through `http://localhost:8888` (not `file://` protocol)
-3. The function includes comprehensive CORS headers for local development
+```
+POST /.netlify/functions/submit-to-notion?path=/v1/pages
+```
 
-## Usage
+- Proxies requests to Notion API
+- Automatically injects database ID from environment variables
+- Supports all Notion API endpoints under `/v1/`
+- Handles CORS and authentication
 
-The form submits to `/.netlify/functions/submit-to-notion?path=/v1/pages` and automatically:
-
-- Injects the `parent.database_id` from environment variables
-- Handles CORS for local and production environments
-- Provides proper error handling and feedback
-- **Uploads images directly to Notion** using the Direct Upload API
-
-### File Upload Features
-
-- **Temporary Storage**: Images are temporarily stored in Netlify Blobs
-- **Notion Integration**: Files are then uploaded to Notion using Direct Upload API
-- **Automatic Cleanup**: Temporary files are automatically removed after 24 hours
-- **Automatic Validation**: File size, type, and format validation
-- **Progress Tracking**: Real-time upload progress with visual feedback
-- **Error Handling**: Comprehensive error handling for upload failures
-
-## Direct File Upload to Notion
-
-The service now supports **direct image uploads to Notion** without requiring external storage services.
-
-### How It Works
-
-1. **Client-side Processing**: Images are converted to base64 using the FileReader API
-2. **Temporary Storage**: Files are temporarily stored in Netlify Blobs for public access
-3. **Notion Upload**: Files are uploaded to Notion using their Direct Upload API with the public URL
-4. **Database Integration**: Uploaded files are automatically linked to database entries
-5. **Automatic Cleanup**: Temporary files in Netlify Blobs are automatically removed after 24 hours
-
-### Supported Features
-
-- **File Types**: JPEG, PNG, GIF, WebP, SVG
-- **File Size**: Up to 5MB per file (free workspace limit)
-- **Batch Upload**: Up to 10 files per submission
-- **Progress Tracking**: Real-time upload progress with visual feedback
-- **Error Handling**: Comprehensive validation and error reporting
-
-### API Endpoint
+### 2. Image Upload
 
 ```
 POST /.netlify/functions/upload-image
 ```
 
-For detailed documentation, see [DIRECT_UPLOAD_README.md](./DIRECT_UPLOAD_README.md).
+- Uploads images directly to Notion using Direct Upload API
+- Supports JPEG, PNG, GIF, WebP, SVG formats
+- File size limit: 5MB per file
+- Automatic file validation and error handling
 
-## Cron Function - Status Change Notifications
+### 3. File Serving
 
-A scheduled function is available at `/.netlify/functions/check-status-changes` that:
+```
+GET /.netlify/functions/serve-blob/{filename}
+```
 
-- **Automatically runs every 15 minutes** via Netlify's built-in scheduling
+- Serves temporary files from Netlify Blobs
+- Used for previewing uploaded images
+- Automatic content-type detection
+
+### 4. Status Change Notifications
+
+```
+GET /.netlify/functions/check-status-changes
+```
+
+- Automated function that runs every 2 minutes
 - Checks for pages with "Approved" or "Declined" status
-- Sends automated emails to clients when their project status changes
-- Uses Nodemailer for email delivery
+- Sends email notifications to clients
+- Can be triggered manually for testing
 
-### Setting up the Scheduled Function
+## 📁 File Upload Workflow
 
-1. **Install Nodemailer dependency:**
+1. **Client Upload**: Images are converted to base64 and sent to the upload function
+2. **Temporary Storage**: Files are stored in Netlify Blobs for public access
+3. **Notion Integration**: Files are uploaded to Notion using Direct Upload API
+4. **Database Linking**: Uploaded files are automatically linked to database entries
+5. **Cleanup**: Temporary files are automatically removed after 24 hours
 
-   ```bash
-   npm install nodemailer
-   ```
+### Supported File Types
 
-2. **Set up environment variables:**
+- **Images**: JPEG, PNG, GIF, WebP, SVG
+- **Size Limit**: 5MB per file (Notion free workspace limit)
+- **Batch Upload**: Up to 10 files per submission
 
-   ```bash
-   # SMTP Configuration
-   SMTP_HOST=smtp.gmail.com
-   SMTP_PORT=587
-   SMTP_SECURE=false
-   SMTP_USER=your-email@gmail.com
-   SMTP_PASS=your-app-password
-   FROM_EMAIL=noreply@yourdomain.com
+## 📧 Email Notifications
 
-   # Alternative: Gmail App Password
-   GMAIL_APP_PASSWORD=your-gmail-app-password
-   ```
+The service includes an automated notification system that:
 
-3. **Configuration is automatic** - The function is already configured in `netlify.toml`:
-
-   ```toml
-   [[functions]]
-     function = "check-status-changes"
-     schedule = "@every 15m"
-   ```
+- **Runs every 2 minutes** via Netlify's built-in scheduling
+- Monitors database for status changes (Approved/Declined)
+- Sends beautifully formatted HTML emails to clients
+- Includes project details and status-specific messaging
 
 ### Email Configuration Examples
 
@@ -138,17 +176,6 @@ GMAIL_APP_PASSWORD=your-16-character-app-password
 FROM_EMAIL=your-email@gmail.com
 ```
 
-#### Outlook/Hotmail Setup
-
-```bash
-SMTP_HOST=smtp-mail.outlook.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=your-email@outlook.com
-SMTP_PASS=your-password
-FROM_EMAIL=your-email@outlook.com
-```
-
 #### Custom SMTP Server
 
 ```bash
@@ -160,122 +187,115 @@ SMTP_PASS=your-password
 FROM_EMAIL=noreply@yourdomain.com
 ```
 
-### Manual Testing
+## 🚀 Deployment
 
-You can test the function manually by visiting:
+### Netlify (Recommended)
 
+1. **Connect Repository**: Link your GitHub/GitLab repository to Netlify
+2. **Build Settings**:
+   - Build command: `npm run build` (or leave empty if no build step)
+   - Publish directory: `public`
+   - Functions directory: `netlify/functions`
+3. **Environment Variables**: Add all required environment variables in Netlify dashboard
+4. **Deploy**: Netlify will automatically deploy on every push
+
+### Manual Deployment
+
+```bash
+# Build and deploy
+npm run build
+netlify deploy --prod
 ```
-https://your-site.netlify.app/.netlify/functions/check-status-changes?cron=true
+
+## 🔍 Testing
+
+### Local Testing
+
+```bash
+npm run dev
+# Visit http://localhost:8888
 ```
 
-### Email Templates
+### Manual Function Testing
 
-The function sends beautifully formatted HTML emails with:
+```bash
+# Test status notifications
+curl "http://localhost:8888/.netlify/functions/check-status-changes?cron=true"
 
-- Project details (service type, budget, description)
-- Status-specific messaging (congratulations for approved, alternative options for declined)
-- Professional styling and branding
+# Test image upload
+curl -X POST "http://localhost:8888/.netlify/functions/upload-image" \
+  -H "Content-Type: application/json" \
+  -d '{"files":[{"name":"test.jpg","type":"image/jpeg","data":"base64data","size":1024}]}'
+```
 
-### Monitoring
+## 🐛 Troubleshooting
 
-- **Function Logs**: Check Netlify dashboard → Functions → check-status-changes
-- **Email Delivery**: Monitor your email service dashboard
-- **Scheduled Runs**: View scheduled function execution in Netlify dashboard
-
-## Netlify Blobs Setup
-
-This service uses Netlify Blobs for temporary file storage before uploading to Notion. Here's how to set it up:
-
-### Quick Setup (Recommended)
-
-1. **Login to Netlify CLI:**
-
-   ```bash
-   npx netlify login
-   ```
-
-2. **Start development server:**
-
-   ```bash
-   npx netlify dev
-   ```
-
-   This automatically configures all required environment variables.
-
-### Manual Setup
-
-If you prefer to set up environment variables manually:
-
-1. **Get your Netlify Site ID:**
-
-   - Go to [Netlify Dashboard](https://app.netlify.com/)
-   - Select your site
-   - Go to **Site Settings** → **General** → **Site Information**
-   - Copy the **Site ID**
-
-2. **Get your Netlify Personal Access Token:**
-
-   - Go to [User Settings](https://app.netlify.com/user/settings)
-   - Click **Applications** → **Personal Access Tokens**
-   - Click **New Access Token**
-   - Give it a name (e.g., "Notion Upload Function")
-   - Copy the generated token
-
-3. **Create NETLIFY_BLOBS_CONTEXT:**
-
-   ```bash
-   # Create this JSON object:
-   {
-     "apiURL": "https://api.netlify.com",
-     "token": "your-netlify-token",
-     "siteID": "your-site-id"
-   }
-
-   # Convert to Base64 and add to .env:
-   NETLIFY_BLOBS_CONTEXT=your-base64-encoded-string
-   ```
-
-### Environment Variables
-
-- `NOTION_API_KEY`: Your Notion integration token (for direct uploads)
-- `VITE_NOTION_API_KEY`: Your Notion integration token (for API proxy)
-- `VITE_NOTION_DATABASE_ID`: Your Notion database ID (for auto-injection)
-- `NETLIFY_SITE_ID`: Your Netlify site ID (for Blobs)
-- `NETLIFY_TOKEN`: Your Netlify personal access token (for Blobs)
-- `NETLIFY_BLOBS_CONTEXT`: Base64-encoded Blobs configuration (auto-generated)
-- `SMTP_HOST`: SMTP server host (default: smtp.gmail.com)
-- `SMTP_PORT`: SMTP server port (default: 587)
-- `SMTP_SECURE`: Use SSL/TLS (default: false)
-- `SMTP_USER`: SMTP username/email
-- `SMTP_PASS`: SMTP password
-- `GMAIL_APP_PASSWORD`: Gmail app password (alternative to SMTP_PASS)
-- `FROM_EMAIL`: Sender email address (defaults to noreply@yourdomain.com)
-
-### Troubleshooting Netlify Blobs
-
-#### Common Issues
+### Common Issues
 
 1. **"MissingBlobsEnvironmentError"**
 
    - Run `npx netlify login` to authenticate
    - Use `npx netlify dev` to start development server
-   - Ensure `NETLIFY_BLOBS_CONTEXT` is set in production environment
+   - Netlify automatically handles blobs context in production
 
-2. **"Failed retrieving site information"**
+2. **CORS Errors**
 
-   - Check your Netlify login status: `npx netlify status`
-   - Verify your site ID is correct
-   - Ensure your personal access token has proper permissions
+   - Make sure you're running the Netlify dev server (`npm run dev`)
+   - Access through `http://localhost:8888` (not `file://` protocol)
+   - Check that CORS headers are properly set
 
-3. **Environment Variables Not Loading**
-   - Use `npx netlify dev` instead of `node` directly
-   - Check that `.env` file is in project root
-   - Verify environment variables are set in Netlify dashboard for production
+3. **Email Notifications Not Working**
+   - Verify SMTP credentials in environment variables
+   - Check Netlify function logs for errors
+   - Ensure the function is scheduled correctly in `netlify.toml`
 
-#### Production Deployment
+### Environment Variables Checklist
 
-For production, set these environment variables in your Netlify dashboard:
+- [ ] `NOTION_API_KEY` - Your Notion integration token
+- [ ] `SMTP_HOST` - SMTP server hostname
+- [ ] `SMTP_USER` - SMTP username/email
+- [ ] `SMTP_PASS` or `GMAIL_APP_PASSWORD` - SMTP password
+- [ ] `FROM_EMAIL` - Sender email address
 
-- Go to **Site Settings** → **Environment Variables**
-- Add `NETLIFY_BLOBS_CONTEXT` with the Base64-encoded value
-- Redeploy your site after adding variables
+### 🎯 Automatic Blobs Handling
+
+**No manual `NETLIFY_BLOBS_CONTEXT` configuration needed!**
+
+- **Development**: `netlify dev` automatically generates blobs context
+- **Production**: Netlify automatically provides blobs authentication
+- **Functions**: Use `getStore("temp-uploads")` directly without parameters
+- **Cleanup**: Files automatically expire after 24 hours
+
+## 📚 Dependencies
+
+### Production Dependencies
+
+- `@netlify/blobs` - File storage and management
+- `busboy` - File upload parsing
+- `dotenv` - Environment variable management
+- `nodemailer` - Email sending
+
+### Development Dependencies
+
+- `netlify-cli` - Local development and deployment
+
+## 📄 License
+
+ISC License
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📞 Support
+
+For issues and questions:
+
+1. Check the troubleshooting section above
+2. Review Netlify function logs
+3. Verify environment variable configuration
+4. Test functions manually using the provided endpoints

@@ -125,19 +125,9 @@ export const handler = async (event) => {
         console.log(`Creating public URL for Notion: ${publicUrl}`);
 
         // Store the file in Netlify Blobs so our serve-blob function can access it
-        const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
-        if (!blobsContext) {
-          throw new Error(
-            "NETLIFY_BLOBS_CONTEXT environment variable is required"
-          );
-        }
-
-        const store = getStore("temp-uploads", {
-          siteID: JSON.parse(Buffer.from(blobsContext, "base64").toString())
-            .siteID,
-          token: JSON.parse(Buffer.from(blobsContext, "base64").toString())
-            .token,
-        });
+        // Netlify automatically provides blobs context in production
+        // For local development, use netlify dev which auto-generates this
+        const store = getStore("temp-uploads");
 
         try {
           console.log(

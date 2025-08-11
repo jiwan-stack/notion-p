@@ -10,6 +10,8 @@
 
 [blobs]
   directory = ".netlify/blobs"
+  # Netlify automatically handles authentication and context
+  # No need to manually set NETLIFY_BLOBS_CONTEXT
 
 [[headers]]
   for = "/.netlify/functions/*"

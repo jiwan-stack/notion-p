@@ -230,8 +230,8 @@
     </div>
 
     <script>
-      const CLIENT_DATABASE_ID = "24a30c0a61cd80869243f2beb52b019c";
-      const BASE_URL = "https://notion-p.netlify.app/";
+      // Use Netlify system environment variable or fallback to current origin
+      const BASE_URL = window.location.origin + "/";
 
       // File upload constants based on Notion API limits
       const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for free workspaces
@@ -436,7 +436,6 @@
                 "Content-Type": "application/json",
               },
               body: JSON.stringify({
-                clientDatabaseId: CLIENT_DATABASE_ID,
                 files: fileData,
               }),
             }
@@ -522,7 +521,6 @@
           }
 
           const body = {
-            clientDatabaseId: CLIENT_DATABASE_ID,
             properties: {
               "Full Name": { title: [{ text: { content: name } }] },
               Email: { email },

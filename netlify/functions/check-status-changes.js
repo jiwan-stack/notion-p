@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { NOTION_DATABASE_ID, NOTION_API_VERSION } from "./config.js";
 
 // Use native fetch instead of axios to avoid module compatibility issues
 
@@ -57,7 +58,7 @@ const getDatabasePages = async (databaseId, notionApiKey) => {
         method: "POST",
         headers: {
           Authorization: `Bearer ${notionApiKey}`,
-          "Notion-Version": "2022-06-28",
+          "Notion-Version": NOTION_API_VERSION,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -186,13 +187,15 @@ export const handler = async (event, context) => {
     };
   }
 
-  const notionApiKey = process.env.VITE_NOTION_API_KEY;
-  const databaseId = process.env.VITE_NOTION_DATABASE_ID;
-  console.log("VITE_NOTION_DATABASE_ID-->", databaseId);
-  if (!notionApiKey || !databaseId) {
+  const notionApiKey = process.env.NOTION_API_KEY;
+  const databaseId = NOTION_DATABASE_ID;
+  console.log("Database ID:", databaseId);
+  if (!notionApiKey || !databaseId || databaseId === "your-database-id-here") {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Notion configuration missing" }),
+      body: JSON.stringify({
+        error: "Notion configuration missing or database ID not set",
+      }),
     };
   }
 
