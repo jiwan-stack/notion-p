@@ -111,6 +111,11 @@ export const handler = async (event) => {
 
     const fullUrl = queryString ? `${targetUrl}?${queryString}` : targetUrl;
 
+    // Debug: Log what we're sending to Notion
+    if (hasBodyMethod && data) {
+      console.log("Sending to Notion:", JSON.stringify(data, null, 2));
+    }
+
     const response = await fetch(fullUrl, {
       method,
       headers: upstreamHeaders,
