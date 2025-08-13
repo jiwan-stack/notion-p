@@ -1,4 +1,4 @@
-import { NOTION_DATABASE_ID, NOTION_API_VERSION } from "./config.js";
+// No imports needed - using environment variables directly
 
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
@@ -52,7 +52,7 @@ export const handler = async (event) => {
 
   const upstreamHeaders = {
     Authorization: `Bearer ${notionApiKey}`,
-    "Notion-Version": query.version || NOTION_API_VERSION,
+    "Notion-Version": query.version || "2022-06-28",
     "Content-Type": requestContentType,
   };
 
@@ -92,7 +92,7 @@ export const handler = async (event) => {
 
         data.parent = {
           ...(data.parent || {}),
-          database_id: NOTION_DATABASE_ID,
+          database_id: process.env.NOTION_DATABASE_ID,
         };
 
         // Remove helper field so it’s not sent to Notion

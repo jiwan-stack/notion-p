@@ -61,10 +61,7 @@ Create a `.env` file in the project root:
 ```bash
 # Notion Configuration
 NOTION_API_KEY=your_notion_integration_token
-
-# Netlify Configuration (auto-configured with netlify dev)
-NETLIFY_SITE_ID=your_netlify_site_id
-NETLIFY_TOKEN=your_netlify_personal_access_token
+NOTION_DATABASE_ID=your_notion_database_id
 
 # Email Configuration (for status notifications)
 SMTP_HOST=smtp.gmail.com
@@ -78,14 +75,14 @@ FROM_EMAIL=noreply@yourdomain.com
 
 ### 4. Configure Database ID
 
-Update the database ID in the shared configuration file:
+Set the database ID in your environment variables:
 
-```javascript
-// In netlify/functions/config.js
-export const NOTION_DATABASE_ID = "your-actual-database-id-here";
+```bash
+# In your .env file or Netlify dashboard
+NOTION_DATABASE_ID=your-actual-database-id-here
 ```
 
-Replace `"your-actual-database-id-here"` with your actual Notion database ID. This ID is used by both the API proxy function and the status change notification function.
+Replace `your-actual-database-id-here` with your actual Notion database ID. This ID is used by both the API proxy function and the status change notification function.
 
 ### 5. Start Development Server
 
@@ -252,6 +249,7 @@ curl -X POST "http://localhost:8888/.netlify/functions/upload-image" \
 ### Environment Variables Checklist
 
 - [ ] `NOTION_API_KEY` - Your Notion integration token
+- [ ] `NOTION_DATABASE_ID` - Your Notion database ID
 - [ ] `SMTP_HOST` - SMTP server hostname
 - [ ] `SMTP_USER` - SMTP username/email
 - [ ] `SMTP_PASS` or `GMAIL_APP_PASSWORD` - SMTP password

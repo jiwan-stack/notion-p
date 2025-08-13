@@ -30,7 +30,7 @@
               <label
                 for="product"
                 class="block text-sm font-medium text-gray-700"
-                >Product Name</label
+                >Product</label
               >
               <input
                 id="product"
@@ -524,7 +524,7 @@
             properties: {
               "Full Name": { title: [{ text: { content: name } }] },
               Email: { email },
-              "Product Name": { rich_text: [{ text: { content: product } }] },
+              Product: { rich_text: [{ text: { content: product } }] },
               "Serial Number": { rich_text: [{ text: { content: serial } }] },
               "Purchase Date": { date: { start: purchaseDate } },
               "Issue Details": {
@@ -532,7 +532,7 @@
               },
               "Issue Type": { select: { name: service } },
               Status: { status: { name: "New" } },
-              "Date Received": { date: { start: dateReceived } },
+              "Received Date": { date: { start: dateReceived } },
               ...(imageFiles.length > 0 && {
                 "Image Upload": {
                   files: imageFiles,
