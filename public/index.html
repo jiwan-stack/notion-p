@@ -60,15 +60,21 @@
               <label
                 for="purchaseDate"
                 class="block text-sm font-medium text-gray-700"
-                >Purchase Date</label
+                >Purchase Date (must be before today)</label
               >
               <input
                 id="purchaseDate"
                 name="purchaseDate"
                 type="date"
+                max=""
                 required
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+              <div
+                id="purchase-date-status"
+                class="text-sm text-gray-500 mt-1"
+                style="display: none"
+              ></div>
             </div>
           </div>
           <div>
@@ -183,8 +189,7 @@
               <label
                 for="scheduleDate"
                 class="block text-sm font-medium text-gray-700"
-                >Choose a preferable date for scheduling Engineer visit (future
-                dates only)</label
+                >Choose a preferable date for scheduling Engineer visit</label
               >
               <input
                 id="scheduleDate"
@@ -356,6 +361,36 @@
         serviceSelect.disabled = false;
       }
 
+      // Function to set maximum date for purchase date field (yesterday)
+      function setPurchaseDateMax() {
+        const purchaseDateInput = document.getElementById("purchaseDate");
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayString = yesterday.toISOString().split("T")[0];
+        purchaseDateInput.max = yesterdayString;
+
+        // Add change event listener for validation
+        purchaseDateInput.addEventListener("change", validatePurchaseDate);
+
+        // Also add input event listener to catch manual typing
+        purchaseDateInput.addEventListener("input", validatePurchaseDate);
+
+        // Update maximum date every day at midnight
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const timeUntilMidnight = tomorrow - now;
+
+        // Set a timer to update the maximum date at midnight
+        setTimeout(() => {
+          setPurchaseDateMax();
+          // Then update every 24 hours
+          setInterval(setPurchaseDateMax, 24 * 60 * 60 * 1000);
+        }, timeUntilMidnight);
+      }
+
       // Function to set minimum date for schedule date field
       function setScheduleDateMin() {
         const scheduleDateInput = document.getElementById("scheduleDate");
@@ -382,6 +417,40 @@
           // Then update every 24 hours
           setInterval(setScheduleDateMin, 24 * 60 * 60 * 1000);
         }, timeUntilMidnight);
+      }
+
+      // Function to validate purchase date
+      function validatePurchaseDate() {
+        const purchaseDateInput = document.getElementById("purchaseDate");
+        const statusElement = document.getElementById("purchase-date-status");
+
+        if (!purchaseDateInput.value) {
+          statusElement.style.display = "none";
+          purchaseDateInput.setCustomValidity("");
+          return;
+        }
+
+        const selectedDate = new Date(purchaseDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+
+        if (selectedDate >= today) {
+          statusElement.textContent =
+            "⚠ Please select a date before today for purchase date";
+          statusElement.className = "text-sm text-red-600 mt-1";
+          statusElement.style.display = "block";
+          purchaseDateInput.setCustomValidity(
+            "Please select a date before today"
+          );
+
+          // Clear the invalid date
+          purchaseDateInput.value = "";
+        } else {
+          statusElement.textContent = "✓ Valid purchase date selected";
+          statusElement.className = "text-sm text-green-600 mt-1";
+          statusElement.style.display = "block";
+          purchaseDateInput.setCustomValidity("");
+        }
       }
 
       // Function to validate schedule date
@@ -418,6 +487,9 @@
 
       // Load issue types when page loads
       loadIssueTypes();
+
+      // Set up purchase date validation when page loads
+      setPurchaseDateMax();
 
       // Set up schedule date validation when page loads
       setScheduleDateMin();
@@ -678,6 +750,19 @@
         const service = document.getElementById("service").value;
         const details = document.getElementById("details").value.trim();
         const scheduleDate = document.getElementById("scheduleDate").value;
+
+        // Validate purchase date
+        if (purchaseDate) {
+          const selectedDate = new Date(purchaseDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (selectedDate >= today) {
+            showResult("Error: Purchase date must be before today", false);
+            submitBtn.disabled = false;
+            return;
+          }
+        }
 
         // Validate schedule date if provided
         if (scheduleDate) {
