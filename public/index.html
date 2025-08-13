@@ -296,14 +296,14 @@
             });
 
             // Show success status
-            statusElement.textContent = `✓ Loaded ${data.issueTypes.length} issue types from Notion`;
+            statusElement.textContent = `✓ Loaded ${data.issueTypes.length} issue types`;
             statusElement.className = "text-sm text-green-600 mt-1";
 
             // Hide retry button on success
             document.getElementById("retry-issue-types").style.display = "none";
 
             console.log(
-              `Loaded ${data.issueTypes.length} issue types from Notion:`,
+              `Loaded ${data.issueTypes.length} issue types:`,
               data.issueTypes
             );
           } else {
