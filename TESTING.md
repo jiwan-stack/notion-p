@@ -66,7 +66,7 @@ The test script will:
 
 1. ✅ Check if all required environment variables are set
 2. 🚀 Execute the function with a mock scheduled event
-3. 📊 Query your Notion database for pages with "Approved" or "Declined" status
+3. 📊 Query your Notion database for pages with "Completed" or "Rejected" status
 4. 📧 Send email notifications to clients (if any are found)
 5. 📋 Display the results
 

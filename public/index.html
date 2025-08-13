@@ -85,19 +85,24 @@
                 required
                 class="mt-1 block w-full rounded-md border border-gray-300 bg-white px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
-                <option value="" disabled selected>Select issue</option>
-                <option value="Won't Turn On">Won't Turn On</option>
-                <option value="Makes Strange Noise">Makes Strange Noise</option>
-                <option value="Physical Damage">Physical Damage</option>
-                <option value="Software Problem">Software Problem</option>
-                <option value="Missing Parts">Missing Parts</option>
-                <option value="Product Leaking">Product Leaking</option>
-                <option value="Display Issues">Display Issues</option>
-                <option value="Connection Problems">Connection Problems</option>
-                <option value="Battery Problems">Battery Problems</option>
-                <option value="Broken Accessory">Broken Accessory</option>
-                <option value="Other">Other</option>
+                <option value="" disabled selected>
+                  Loading issue types...
+                </option>
               </select>
+              <div
+                id="issue-type-status"
+                class="text-sm text-gray-500 mt-1"
+                style="display: none"
+              ></div>
+              <button
+                id="retry-issue-types"
+                type="button"
+                class="text-sm text-blue-600 hover:text-blue-800 underline mt-1"
+                style="display: none"
+                onclick="loadIssueTypes()"
+              >
+                Retry loading issue types
+              </button>
             </div>
             <div style="margin-top: 12px">
               <label
@@ -176,13 +181,13 @@
             <h3 class="mt-6 text-lg font-semibold">Engineer Schedule</h3>
             <div style="margin-top: 12px">
               <label
-                for="engineerDate"
+                for="scheduleDate"
                 class="block text-sm font-medium text-gray-700"
                 >Choose a preferable date for scheduling Engineer visit</label
               >
               <input
-                id="engineerDate"
-                name="engineerDate"
+                id="scheduleDate"
+                name="scheduleDate"
                 type="date"
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
@@ -253,6 +258,99 @@
       const progressBar = document.getElementById("progress-bar");
       const imageError = document.getElementById("image-error");
       const dropZone = document.getElementById("drop-zone");
+
+      // Function to fetch and populate issue types from Notion
+      async function loadIssueTypes() {
+        const serviceSelect = document.getElementById("service");
+        const statusElement = document.getElementById("issue-type-status");
+
+        try {
+          // Show loading state
+          serviceSelect.innerHTML =
+            '<option value="" disabled selected>Loading issue types...</option>';
+          serviceSelect.disabled = true;
+          statusElement.textContent = "Loading issue types from Notion...";
+          statusElement.style.display = "block";
+          statusElement.className = "text-sm text-blue-600 mt-1";
+
+          const response = await fetch(
+            `${BASE_URL}.netlify/functions/get-issue-types`
+          );
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+
+          if (data.success && data.issueTypes && data.issueTypes.length > 0) {
+            // Clear existing options
+            serviceSelect.innerHTML =
+              '<option value="" disabled selected>Select issue</option>';
+
+            // Add options from Notion
+            data.issueTypes.forEach((issueType) => {
+              const option = document.createElement("option");
+              option.value = issueType.name;
+              option.textContent = issueType.name;
+              serviceSelect.appendChild(option);
+            });
+
+            // Show success status
+            statusElement.textContent = `✓ Loaded ${data.issueTypes.length} issue types from Notion`;
+            statusElement.className = "text-sm text-green-600 mt-1";
+
+            // Hide retry button on success
+            document.getElementById("retry-issue-types").style.display = "none";
+
+            console.log(
+              `Loaded ${data.issueTypes.length} issue types from Notion:`,
+              data.issueTypes
+            );
+          } else {
+            throw new Error(data.error || "No issue types found in database");
+          }
+        } catch (error) {
+          console.error("Error loading issue types:", error);
+
+          // Show error state
+          serviceSelect.innerHTML =
+            '<option value="" disabled selected>Error loading issue types</option>';
+          statusElement.textContent = `⚠ Error: ${error.message}. Retrying with fallback options...`;
+          statusElement.className = "text-sm text-orange-600 mt-1";
+
+          // Show retry button
+          document.getElementById("retry-issue-types").style.display = "inline";
+
+          // Fallback to default options after a delay
+          setTimeout(() => {
+            serviceSelect.innerHTML = `
+              <option value="" disabled selected>Select issue (using fallback options)</option>
+              <option value="Won't Turn On">Won't Turn On</option>
+              <option value="Makes Strange Noise">Makes Strange Noise</option>
+              <option value="Physical Damage">Physical Damage</option>
+              <option value="Software Problem">Software Problem</option>
+              <option value="Missing Parts">Missing Parts</option>
+              <option value="Product Leaking">Product Leaking</option>
+              <option value="Display Issues">Display Issues</option>
+              <option value="Connection Problems">Connection Problems</option>
+              <option value="Battery Problems">Battery Problems</option>
+              <option value="Broken Accessory">Broken Accessory</option>
+              <option value="Other">Other</option>
+            `;
+            serviceSelect.disabled = false;
+            statusElement.textContent = "✓ Using fallback issue type options";
+            statusElement.className = "text-sm text-gray-600 mt-1";
+          }, 2000);
+
+          return;
+        }
+
+        // Enable the select field
+        serviceSelect.disabled = false;
+      }
+
+      // Load issue types when page loads
+      loadIssueTypes();
 
       // Handle click to open file picker
       dropZone.addEventListener("click", () => imageInput.click());
@@ -509,6 +607,7 @@
         const purchaseDate = document.getElementById("purchaseDate").value;
         const service = document.getElementById("service").value;
         const details = document.getElementById("details").value.trim();
+        const scheduleDate = document.getElementById("scheduleDate").value;
 
         const now = new Date();
         const dateReceived = now.toISOString().split("T")[0];
@@ -533,6 +632,10 @@
               "Issue Type": { select: { name: service } },
               Status: { status: { name: "New" } },
               "Received Date": { date: { start: dateReceived } },
+              ...(scheduleDate &&
+                scheduleDate.trim() !== "" && {
+                  "Schedule Date": { date: { start: scheduleDate } },
+                }),
               ...(imageFiles.length > 0 && {
                 "Image Upload": {
                   files: imageFiles,
@@ -540,6 +643,19 @@
               }),
             },
           };
+
+          // Log the data being sent (for debugging)
+          console.log("Submitting service request with data:", {
+            name,
+            email,
+            product,
+            serial,
+            purchaseDate,
+            service,
+            details,
+            scheduleDate: scheduleDate || "Not specified",
+            imageFiles: imageFiles.length,
+          });
 
           const res = await fetch(
             `${BASE_URL}.netlify/functions/submit-to-notion?path=/v1/pages`,
@@ -580,6 +696,8 @@
           form.reset();
           selectedFiles = [];
           updateFilePreview();
+          // Clear the schedule date field specifically since it might not be reset by form.reset()
+          document.getElementById("scheduleDate").value = "";
         } catch (err) {
           console.error("Submission error:", err);
           showResult(`Error: ${err.message}`, false);

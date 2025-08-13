@@ -133,7 +133,7 @@ GET /.netlify/functions/check-status-changes
 ```
 
 - Automated function that runs every 2 minutes
-- Checks for pages with "Approved" or "Declined" status
+- Checks for pages with "Completed" or "Rejected" status
 - Sends email notifications to clients
 - Can be triggered manually for testing
 
@@ -156,7 +156,7 @@ GET /.netlify/functions/check-status-changes
 The service includes an automated notification system that:
 
 - **Runs every 2 minutes** via Netlify's built-in scheduling
-- Monitors database for status changes (Approved/Declined)
+- Monitors database for status changes (Completed/Rejected)
 - Sends beautifully formatted HTML emails to clients
 - Includes project details and status-specific messaging
 

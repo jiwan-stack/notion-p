@@ -12,20 +12,7 @@ const emailStyling = {
       icon: "🎉",
       gradient: "linear-gradient(135deg, #d1e7dd 0%, #c3e6cb 100%)",
     },
-    "In Progress": {
-      color: "#664d03",
-      bgColor: "#fff3cd",
-      borderColor: "#ffecb5",
-      icon: "🔧",
-      gradient: "linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%)",
-    },
-    Approved: {
-      color: "#055160",
-      bgColor: "#cff4fc",
-      borderColor: "#b6effb",
-      icon: "✅",
-      gradient: "linear-gradient(135deg, #cff4fc 0%, #b6effb 100%)",
-    },
+
     Rejected: {
       color: "#842029",
       bgColor: "#f8d7da",
@@ -61,10 +48,6 @@ export const emailTemplates = {
     const statusColor =
       status === "Completed"
         ? "#059669"
-        : status === "In Progress"
-        ? "#d97706"
-        : status === "Approved"
-        ? "#0891b2"
         : status === "Rejected"
         ? "#dc2626"
         : "#6b7280";
