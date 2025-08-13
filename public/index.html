@@ -183,14 +183,21 @@
               <label
                 for="scheduleDate"
                 class="block text-sm font-medium text-gray-700"
-                >Choose a preferable date for scheduling Engineer visit</label
+                >Choose a preferable date for scheduling Engineer visit (future
+                dates only)</label
               >
               <input
                 id="scheduleDate"
                 name="scheduleDate"
                 type="date"
+                min=""
                 class="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
+              <div
+                id="schedule-date-status"
+                class="text-sm text-gray-500 mt-1"
+                style="display: none"
+              ></div>
             </div>
             <h3 class="mt-6 text-lg font-semibold">Contact Information</h3>
             <div>
@@ -349,8 +356,71 @@
         serviceSelect.disabled = false;
       }
 
+      // Function to set minimum date for schedule date field
+      function setScheduleDateMin() {
+        const scheduleDateInput = document.getElementById("scheduleDate");
+        const today = new Date().toISOString().split("T")[0];
+        scheduleDateInput.min = today;
+
+        // Add change event listener for validation
+        scheduleDateInput.addEventListener("change", validateScheduleDate);
+
+        // Also add input event listener to catch manual typing
+        scheduleDateInput.addEventListener("input", validateScheduleDate);
+
+        // Update minimum date every day at midnight
+        const now = new Date();
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const timeUntilMidnight = tomorrow - now;
+
+        // Set a timer to update the minimum date at midnight
+        setTimeout(() => {
+          setScheduleDateMin();
+          // Then update every 24 hours
+          setInterval(setScheduleDateMin, 24 * 60 * 60 * 1000);
+        }, timeUntilMidnight);
+      }
+
+      // Function to validate schedule date
+      function validateScheduleDate() {
+        const scheduleDateInput = document.getElementById("scheduleDate");
+        const statusElement = document.getElementById("schedule-date-status");
+
+        if (!scheduleDateInput.value) {
+          statusElement.style.display = "none";
+          scheduleDateInput.setCustomValidity("");
+          return;
+        }
+
+        const selectedDate = new Date(scheduleDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to start of day for accurate comparison
+
+        if (selectedDate < today) {
+          statusElement.textContent =
+            "⚠ Please select a future date for engineer scheduling";
+          statusElement.className = "text-sm text-red-600 mt-1";
+          statusElement.style.display = "block";
+          scheduleDateInput.setCustomValidity("Please select a future date");
+
+          // Clear the invalid date
+          scheduleDateInput.value = "";
+        } else {
+          statusElement.textContent = "✓ Date selected for engineer scheduling";
+          statusElement.className = "text-sm text-green-600 mt-1";
+          statusElement.style.display = "block";
+          scheduleDateInput.setCustomValidity("");
+        }
+      }
+
       // Load issue types when page loads
       loadIssueTypes();
+
+      // Set up schedule date validation when page loads
+      setScheduleDateMin();
 
       // Handle click to open file picker
       dropZone.addEventListener("click", () => imageInput.click());
@@ -608,6 +678,22 @@
         const service = document.getElementById("service").value;
         const details = document.getElementById("details").value.trim();
         const scheduleDate = document.getElementById("scheduleDate").value;
+
+        // Validate schedule date if provided
+        if (scheduleDate) {
+          const selectedDate = new Date(scheduleDate);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          if (selectedDate < today) {
+            showResult(
+              "Error: Please select a future date for engineer scheduling",
+              false
+            );
+            submitBtn.disabled = false;
+            return;
+          }
+        }
 
         const now = new Date();
         const dateReceived = now.toISOString().split("T")[0];
