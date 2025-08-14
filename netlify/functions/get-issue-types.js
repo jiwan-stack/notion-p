@@ -1,4 +1,9 @@
-export const handler = async (event) => {
+// Functions API v2 configuration
+export const config = {
+  method: ["GET", "OPTIONS"]
+};
+
+export default async function handler(request, context) {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
@@ -8,27 +13,25 @@ export const handler = async (event) => {
   };
 
   // Handle preflight requests
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+  if (request.method === "OPTIONS") {
+    return new Response("", { status: 200, headers: corsHeaders });
   }
 
-  if (event.httpMethod !== "GET") {
-    return {
-      statusCode: 405,
+  if (request.method !== "GET") {
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Method not allowed" }),
-    };
+    });
   }
 
   const notionApiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_DATABASE_ID;
 
   if (!notionApiKey || !databaseId) {
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({ error: "Notion configuration missing" }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Notion configuration missing" }),
-    };
+    });
   }
 
   try {
@@ -57,13 +60,12 @@ export const handler = async (event) => {
     const issueTypeProperty = database.properties["Issue Type"];
 
     if (!issueTypeProperty || issueTypeProperty.type !== "select") {
-      return {
-        statusCode: 404,
+      return new Response(JSON.stringify({
+        error: "Issue Type property not found or not a select field",
+      }), {
+        status: 404,
         headers: corsHeaders,
-        body: JSON.stringify({
-          error: "Issue Type property not found or not a select field",
-        }),
-      };
+      });
     }
 
     // Extract the select options
@@ -75,23 +77,21 @@ export const handler = async (event) => {
       color: option.color,
     }));
 
-    return {
-      statusCode: 200,
+    return new Response(JSON.stringify({
+      success: true,
+      issueTypes: formattedOptions,
+    }), {
+      status: 200,
       headers: corsHeaders,
-      body: JSON.stringify({
-        success: true,
-        issueTypes: formattedOptions,
-      }),
-    };
+    });
   } catch (error) {
     console.error("Error fetching issue types:", error);
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({
+      error: "Failed to fetch issue types",
+      message: error.message,
+    }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({
-        error: "Failed to fetch issue types",
-        message: error.message,
-      }),
-    };
+    });
   }
 };
