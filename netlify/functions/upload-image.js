@@ -445,4 +445,4 @@ export default async function handler(event, context) {
       }),
     };
   }
-};
+}
