@@ -406,38 +406,44 @@ export default async function handler(event, context) {
     }
 
     // Return detailed response even if some files failed
-    return new Response(JSON.stringify({
-      success: successfulUploads.length > 0, // Success if at least one file uploaded
-      uploadedFiles: successfulUploads,
-      failedFiles: failedUploads,
-      message: `Successfully uploaded ${successfulUploads.length} files${
-        failedUploads.length > 0 ? `, ${failedUploads.length} failed` : ""
-      }`,
-      totalFiles: files.length,
-      successfulCount: successfulUploads.length,
-      failedCount: failedUploads.length,
-      details: {
-        successful: successfulUploads.map((f) => ({
-          fileName: f.fileName,
-          publicUrl: f.publicUrl,
-        })),
-        failed: failedUploads.map((f) => ({
-          fileName: f.fileName,
-          error: f.error,
-        })),
-      },
-    }), {
-      status: 200,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({
+        success: successfulUploads.length > 0, // Success if at least one file uploaded
+        uploadedFiles: successfulUploads,
+        failedFiles: failedUploads,
+        message: `Successfully uploaded ${successfulUploads.length} files${
+          failedUploads.length > 0 ? `, ${failedUploads.length} failed` : ""
+        }`,
+        totalFiles: files.length,
+        successfulCount: successfulUploads.length,
+        failedCount: failedUploads.length,
+        details: {
+          successful: successfulUploads.map((f) => ({
+            fileName: f.fileName,
+            publicUrl: f.publicUrl,
+          })),
+          failed: failedUploads.map((f) => ({
+            fileName: f.fileName,
+            error: f.error,
+          })),
+        },
+      }),
+      {
+        status: 200,
+        headers: corsHeaders,
+      }
+    );
   } catch (error) {
     console.error("Upload error:", error);
-    return new Response(JSON.stringify({
-      error: "Upload failed",
-      details: error.message,
-    }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Upload failed",
+        details: error.message,
+      }),
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
+    );
   }
 }
