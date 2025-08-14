@@ -27,6 +27,8 @@
   [functions.environment]
   # Ensure Netlify provides Blobs context automatically
   NETLIFY_BLOBS_ENABLED = "true"
+  # Force Netlify to provide Blobs context in runtime
+  NODE_ENV = "production"
 
 # Explicitly enable Netlify Blobs
 [blobs]

@@ -30,7 +30,7 @@ export const handler = async (event) => {
       store = getStore("temp-uploads");
       console.log("Netlify Blobs store initialized successfully for file serving with automatic configuration");
     } catch (storeError) {
-      console.log("Automatic configuration failed for serve-blob, trying with explicit site ID...");
+      console.log("Automatic configuration failed for serve-blob, trying manual configuration...");
       
       // Extract site ID from Netlify environment automatically
       const siteId = process.env.NETLIFY_SITE_ID || 
@@ -40,21 +40,45 @@ export const handler = async (event) => {
                     (process.env.DEPLOY_URL && process.env.DEPLOY_URL.includes('.netlify.app')
                       ? process.env.DEPLOY_URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1]
                       : null);
+
+      // Look for available authentication tokens in Netlify environment
+      const token = 
+        process.env.NETLIFY_TOKEN ||
+        process.env.NETLIFY_AUTH_TOKEN ||
+        process.env.NETLIFY_API_TOKEN ||
+        process.env.NETLIFY_ACCESS_TOKEN ||
+        process.env.NETLIFY_PERSONAL_ACCESS_TOKEN;
       
       console.log(`Serve-blob extracted site ID: ${siteId ? 'found' : 'not found'}`);
+      console.log(`Serve-blob found auth token: ${token ? 'present' : 'missing'}`);
       
-      if (siteId) {
+      if (siteId && token) {
         try {
-          // Try with just siteID - Netlify should provide auth automatically
-          store = getStore("temp-uploads", { siteID: siteId });
-          console.log("Netlify Blobs store initialized for serving with extracted site ID");
-        } catch (siteIdError) {
-          console.error("Site ID configuration also failed for serve-blob:", siteIdError);
+          // Try with both siteID and token
+          store = getStore("temp-uploads", { siteID: siteId, token: token });
+          console.log("Netlify Blobs store initialized for serving with site ID and token");
+        } catch (fullConfigError) {
+          console.error("Full manual configuration failed for serve-blob:", fullConfigError);
           return {
             statusCode: 500,
             headers: corsHeaders,
             body: JSON.stringify({
-              error: `File storage not available: ${storeError.message}. Netlify Blobs may not be properly enabled for this site.`,
+              error: `File storage not available: ${storeError.message}. Unable to configure Netlify Blobs automatically.`,
+            }),
+          };
+        }
+      } else if (siteId) {
+        try {
+          // Try with just siteID - maybe runtime provides token automatically
+          store = getStore("temp-uploads", { siteID: siteId });
+          console.log("Netlify Blobs store initialized for serving with extracted site ID only");
+        } catch (siteIdError) {
+          console.error("Site ID only configuration failed for serve-blob:", siteIdError);
+          return {
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              error: `File storage not available: ${storeError.message}. Missing authentication token for Netlify Blobs.`,
             }),
           };
         }

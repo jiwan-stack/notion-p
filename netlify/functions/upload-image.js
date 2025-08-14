@@ -165,7 +165,7 @@ export const handler = async (event) => {
           );
         } catch (storeError) {
           console.log(
-            "Automatic configuration failed, trying with explicit site ID..."
+            "Automatic configuration failed, trying manual configuration..."
           );
 
           // Extract site ID from Netlify environment automatically
@@ -181,7 +181,16 @@ export const handler = async (event) => {
                 )?.[1]
               : null);
 
+          // Look for available authentication tokens in Netlify environment
+          const token = 
+            process.env.NETLIFY_TOKEN ||
+            process.env.NETLIFY_AUTH_TOKEN ||
+            process.env.NETLIFY_API_TOKEN ||
+            process.env.NETLIFY_ACCESS_TOKEN ||
+            process.env.NETLIFY_PERSONAL_ACCESS_TOKEN;
+
           console.log(`Extracted site ID: ${siteId ? "found" : "not found"}`);
+          console.log(`Found auth token: ${token ? "present" : "missing"}`);
           console.log(
             `Available env vars: URL=${process.env.URL}, DEPLOY_URL=${
               process.env.DEPLOY_URL
@@ -190,22 +199,64 @@ export const handler = async (event) => {
             }`
           );
 
-          if (siteId) {
+          // Check for Netlify Blobs context
+          const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
+          console.log(`NETLIFY_BLOBS_CONTEXT: ${blobsContext ? 'present' : 'missing'}`);
+
+          // Log all available environment variables that might contain authentication
+          const authEnvVars = Object.keys(process.env)
+            .filter(key => key.includes('NETLIFY') || key.includes('TOKEN') || key.includes('AUTH') || key.includes('BLOBS'))
+            .map(key => `${key}=${process.env[key] ? 'present' : 'missing'}`);
+          console.log(`Available auth-related env vars: ${authEnvVars.join(', ')}`);
+
+          // If we have NETLIFY_BLOBS_CONTEXT, try to use it
+          if (blobsContext) {
             try {
-              // Try with just siteID - Netlify should provide auth automatically
-              store = getStore("temp-uploads", { siteID: siteId });
+              const contextData = JSON.parse(Buffer.from(blobsContext, 'base64').toString());
+              console.log('Parsed NETLIFY_BLOBS_CONTEXT successfully');
+              store = getStore("temp-uploads", {
+                siteID: contextData.siteID,
+                token: contextData.token,
+                apiURL: contextData.apiURL
+              });
+              console.log("Netlify Blobs store initialized with NETLIFY_BLOBS_CONTEXT");
+            } catch (contextError) {
+              console.error("Failed to use NETLIFY_BLOBS_CONTEXT:", contextError);
+              // Continue with other methods
+            }
+          }
+
+          if (!store && siteId && token) {
+            try {
+              // Try with both siteID and token
+              store = getStore("temp-uploads", { siteID: siteId, token: token });
               console.log(
-                "Netlify Blobs store initialized with extracted site ID"
+                "Netlify Blobs store initialized with extracted site ID and token"
               );
-            } catch (siteIdError) {
-              console.error("Site ID configuration also failed:", siteIdError);
+            } catch (fullConfigError) {
+              console.error("Full manual configuration failed:", fullConfigError);
               return {
                 success: false,
                 fileName,
-                error: `File storage initialization failed: ${storeError.message}. Netlify Blobs may not be properly enabled for this site.`,
+                error: `File storage initialization failed: ${storeError.message}. Unable to configure Netlify Blobs automatically.`,
               };
             }
-          } else {
+          } else if (!store && siteId) {
+            try {
+              // Try with just siteID - maybe runtime provides token automatically
+              store = getStore("temp-uploads", { siteID: siteId });
+              console.log(
+                "Netlify Blobs store initialized with extracted site ID only"
+              );
+            } catch (siteIdError) {
+              console.error("Site ID only configuration failed:", siteIdError);
+              return {
+                success: false,
+                fileName,
+                error: `File storage initialization failed: ${storeError.message}. Missing authentication token for Netlify Blobs.`,
+              };
+            }
+          } else if (!store) {
             console.error("Could not extract site ID from environment");
             return {
               success: false,
