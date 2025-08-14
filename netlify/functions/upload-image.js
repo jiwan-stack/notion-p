@@ -182,7 +182,7 @@ export const handler = async (event) => {
               : null);
 
           // Look for available authentication tokens in Netlify environment
-          const token = 
+          const token =
             process.env.NETLIFY_TOKEN ||
             process.env.NETLIFY_AUTH_TOKEN ||
             process.env.NETLIFY_API_TOKEN ||
@@ -201,27 +201,44 @@ export const handler = async (event) => {
 
           // Check for Netlify Blobs context
           const blobsContext = process.env.NETLIFY_BLOBS_CONTEXT;
-          console.log(`NETLIFY_BLOBS_CONTEXT: ${blobsContext ? 'present' : 'missing'}`);
+          console.log(
+            `NETLIFY_BLOBS_CONTEXT: ${blobsContext ? "present" : "missing"}`
+          );
 
           // Log all available environment variables that might contain authentication
           const authEnvVars = Object.keys(process.env)
-            .filter(key => key.includes('NETLIFY') || key.includes('TOKEN') || key.includes('AUTH') || key.includes('BLOBS'))
-            .map(key => `${key}=${process.env[key] ? 'present' : 'missing'}`);
-          console.log(`Available auth-related env vars: ${authEnvVars.join(', ')}`);
+            .filter(
+              (key) =>
+                key.includes("NETLIFY") ||
+                key.includes("TOKEN") ||
+                key.includes("AUTH") ||
+                key.includes("BLOBS")
+            )
+            .map((key) => `${key}=${process.env[key] ? "present" : "missing"}`);
+          console.log(
+            `Available auth-related env vars: ${authEnvVars.join(", ")}`
+          );
 
           // If we have NETLIFY_BLOBS_CONTEXT, try to use it
           if (blobsContext) {
             try {
-              const contextData = JSON.parse(Buffer.from(blobsContext, 'base64').toString());
-              console.log('Parsed NETLIFY_BLOBS_CONTEXT successfully');
+              const contextData = JSON.parse(
+                Buffer.from(blobsContext, "base64").toString()
+              );
+              console.log("Parsed NETLIFY_BLOBS_CONTEXT successfully");
               store = getStore("temp-uploads", {
                 siteID: contextData.siteID,
                 token: contextData.token,
-                apiURL: contextData.apiURL
+                apiURL: contextData.apiURL,
               });
-              console.log("Netlify Blobs store initialized with NETLIFY_BLOBS_CONTEXT");
+              console.log(
+                "Netlify Blobs store initialized with NETLIFY_BLOBS_CONTEXT"
+              );
             } catch (contextError) {
-              console.error("Failed to use NETLIFY_BLOBS_CONTEXT:", contextError);
+              console.error(
+                "Failed to use NETLIFY_BLOBS_CONTEXT:",
+                contextError
+              );
               // Continue with other methods
             }
           }
@@ -229,12 +246,18 @@ export const handler = async (event) => {
           if (!store && siteId && token) {
             try {
               // Try with both siteID and token
-              store = getStore("temp-uploads", { siteID: siteId, token: token });
+              store = getStore("temp-uploads", {
+                siteID: siteId,
+                token: token,
+              });
               console.log(
                 "Netlify Blobs store initialized with extracted site ID and token"
               );
             } catch (fullConfigError) {
-              console.error("Full manual configuration failed:", fullConfigError);
+              console.error(
+                "Full manual configuration failed:",
+                fullConfigError
+              );
               return {
                 success: false,
                 fileName,
