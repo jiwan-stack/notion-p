@@ -6,7 +6,8 @@
 
 [functions]
   directory = "netlify/functions"
-  # Netlify automatically provides environment context for Blobs
+  # Enable Netlify Blobs for all functions
+  included_files = ["**/*"]
 
   [functions."check-status-changes"]
   schedule = "*/2 * * * *"
@@ -17,19 +18,14 @@
   [functions."serve-blob"]
   # This function serves files from Netlify Blobs
 
+  [functions.environment]
+  # Ensure Netlify provides Blobs context automatically
+  NETLIFY_BLOBS_ENABLED = "true"
+
 # Explicitly enable Netlify Blobs
 [blobs]
   # This ensures Netlify Blobs is available for the site
   # Netlify Blobs will be automatically enabled when this configuration is deployed
-
-# Enable specific Netlify features
-[functions]
-  # Enable Netlify Blobs for all functions
-  included_files = ["**/*"]
-  
-[functions.environment]
-  # Ensure Netlify provides Blobs context automatically
-  NETLIFY_BLOBS_ENABLED = "true"
 
 [[headers]]
   for = "/.netlify/functions/*"
