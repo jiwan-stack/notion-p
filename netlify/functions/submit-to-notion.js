@@ -2,7 +2,7 @@
 
 // Functions API v2 configuration
 export const config = {
-  method: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+  method: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 };
 
 const getHeader = (headers, name) => {
@@ -43,10 +43,13 @@ export default async function handler(request, context) {
   let path = query.path || "/v1/pages";
   if (!path.startsWith("/")) path = `/${path}`;
   if (!path.startsWith("/v1/")) {
-    return new Response(JSON.stringify({ error: "Only Notion /v1 endpoints are allowed" }), {
-      status: 400,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({ error: "Only Notion /v1 endpoints are allowed" }),
+      {
+        status: 400,
+        headers: corsHeaders,
+      }
+    );
   }
 
   const targetUrl = `https://api.notion.com${path}`;
@@ -147,11 +150,14 @@ export default async function handler(request, context) {
     );
   } catch (error) {
     console.error("Submit to Notion error:", error);
-    return new Response(JSON.stringify({
-      error: error.message || "Unknown error",
-    }), {
-      status: 500,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({
+        error: error.message || "Unknown error",
+      }),
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
+    );
   }
-};
+}
