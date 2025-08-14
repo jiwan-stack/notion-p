@@ -11,15 +11,14 @@ export default async function handler(event, context) {
 
   // Handle preflight requests
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+    return new Response("", { status: 200, headers: corsHeaders });
   }
 
   if (event.httpMethod !== "GET") {
-    return {
-      statusCode: 405,
+    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+      status: 405,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Method Not Allowed" }),
-    };
+    });
   }
 
   try {
@@ -61,13 +60,12 @@ export default async function handler(event, context) {
           console.log("Netlify Blobs store initialized for serving with site ID and token");
         } catch (fullConfigError) {
           console.error("Full manual configuration failed for serve-blob:", fullConfigError);
-          return {
-            statusCode: 500,
+          return new Response(JSON.stringify({
+            error: `File storage not available: ${storeError.message}. Unable to configure Netlify Blobs automatically.`,
+          }), {
+            status: 500,
             headers: corsHeaders,
-            body: JSON.stringify({
-              error: `File storage not available: ${storeError.message}. Unable to configure Netlify Blobs automatically.`,
-            }),
-          };
+          });
         }
       } else if (siteId) {
         try {
@@ -76,23 +74,21 @@ export default async function handler(event, context) {
           console.log("Netlify Blobs store initialized for serving with extracted site ID only");
         } catch (siteIdError) {
           console.error("Site ID only configuration failed for serve-blob:", siteIdError);
-          return {
-            statusCode: 500,
+          return new Response(JSON.stringify({
+            error: `File storage not available: ${storeError.message}. Missing authentication token for Netlify Blobs.`,
+          }), {
+            status: 500,
             headers: corsHeaders,
-            body: JSON.stringify({
-              error: `File storage not available: ${storeError.message}. Missing authentication token for Netlify Blobs.`,
-            }),
-          };
+          });
         }
       } else {
         console.error("Could not extract site ID from environment for serve-blob");
-        return {
-          statusCode: 500,
+        return new Response(JSON.stringify({
+          error: `File storage not available: ${storeError.message}. Could not determine site configuration automatically.`,
+        }), {
+          status: 500,
           headers: corsHeaders,
-          body: JSON.stringify({
-            error: `File storage not available: ${storeError.message}. Could not determine site configuration automatically.`,
-          }),
-        };
+        });
       }
     }
 
@@ -101,11 +97,10 @@ export default async function handler(event, context) {
     const filename = pathSegments[pathSegments.length - 1];
 
     if (!filename) {
-      return {
-        statusCode: 400,
+      return new Response(JSON.stringify({ error: "No filename provided" }), {
+        status: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: "No filename provided" }),
-      };
+      });
     }
 
     console.log(`Attempting to serve file: ${filename}`);
@@ -118,11 +113,10 @@ export default async function handler(event, context) {
     const meta = metaResult?.metadata ?? {};
 
     if (!arrayBufferValue) {
-      return {
-        statusCode: 404,
+      return new Response(JSON.stringify({ error: "File not found" }), {
+        status: 404,
         headers: corsHeaders,
-        body: JSON.stringify({ error: "File not found" }),
-      };
+      });
     }
 
     // Encode to base64 from ArrayBuffer
@@ -132,11 +126,10 @@ export default async function handler(event, context) {
 
     // Validate base64 body
     if (!base64Body || typeof base64Body !== "string") {
-      return {
-        statusCode: 500,
+      return new Response(JSON.stringify({ error: "Failed to encode file as base64" }), {
+        status: 500,
         headers: corsHeaders,
-        body: JSON.stringify({ error: "Failed to encode file as base64" }),
-      };
+      });
     }
 
     // Guess content-type if missing
@@ -156,26 +149,24 @@ export default async function handler(event, context) {
       meta.contentType || meta["content-type"] || guessFromExt;
 
     // Return the file with proper headers
-    return {
-      statusCode: 200,
+    const buffer = Buffer.from(base64Body, "base64");
+    return new Response(buffer, {
+      status: 200,
       headers: {
         ...corsHeaders,
         "Content-Type": contentType,
         "Cache-Control": "public, max-age=3600", // Cache for 1 hour
         "Content-Disposition": `inline; filename="${filename}"`,
       },
-      body: base64Body,
-      isBase64Encoded: true,
-    };
+    });
   } catch (error) {
     console.error("Error serving blob:", error);
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({
+      error: "Failed to serve file",
+      details: error.message,
+    }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({
-        error: "Failed to serve file",
-        details: error.message,
-      }),
-    };
+    });
   }
 };

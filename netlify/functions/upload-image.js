@@ -15,35 +15,32 @@ export default async function handler(event, context) {
 
   // Handle preflight requests
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+    return new Response("", { status: 200, headers: corsHeaders });
   }
 
   if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
+    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+      status: 405,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Method Not Allowed" }),
-    };
+    });
   }
 
   const notionApiKey = process.env.NOTION_API_KEY;
   if (!notionApiKey) {
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({ error: "Notion API key missing" }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Notion API key missing" }),
-    };
+    });
   }
 
   try {
     const { files } = JSON.parse(event.body);
 
     if (!files || !Array.isArray(files) || files.length === 0) {
-      return {
-        statusCode: 400,
+      return new Response(JSON.stringify({ error: "No files provided" }), {
+        status: 400,
         headers: corsHeaders,
-        body: JSON.stringify({ error: "No files provided" }),
-      };
+      });
     }
 
     const uploadPromises = files.map(async (file) => {
@@ -409,40 +406,38 @@ export default async function handler(event, context) {
     }
 
     // Return detailed response even if some files failed
-    return {
-      statusCode: 200,
+    return new Response(JSON.stringify({
+      success: successfulUploads.length > 0, // Success if at least one file uploaded
+      uploadedFiles: successfulUploads,
+      failedFiles: failedUploads,
+      message: `Successfully uploaded ${successfulUploads.length} files${
+        failedUploads.length > 0 ? `, ${failedUploads.length} failed` : ""
+      }`,
+      totalFiles: files.length,
+      successfulCount: successfulUploads.length,
+      failedCount: failedUploads.length,
+      details: {
+        successful: successfulUploads.map((f) => ({
+          fileName: f.fileName,
+          publicUrl: f.publicUrl,
+        })),
+        failed: failedUploads.map((f) => ({
+          fileName: f.fileName,
+          error: f.error,
+        })),
+      },
+    }), {
+      status: 200,
       headers: corsHeaders,
-      body: JSON.stringify({
-        success: successfulUploads.length > 0, // Success if at least one file uploaded
-        uploadedFiles: successfulUploads,
-        failedFiles: failedUploads,
-        message: `Successfully uploaded ${successfulUploads.length} files${
-          failedUploads.length > 0 ? `, ${failedUploads.length} failed` : ""
-        }`,
-        totalFiles: files.length,
-        successfulCount: successfulUploads.length,
-        failedCount: failedUploads.length,
-        details: {
-          successful: successfulUploads.map((f) => ({
-            fileName: f.fileName,
-            publicUrl: f.publicUrl,
-          })),
-          failed: failedUploads.map((f) => ({
-            fileName: f.fileName,
-            error: f.error,
-          })),
-        },
-      }),
-    };
+    });
   } catch (error) {
     console.error("Upload error:", error);
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({
+      error: "Upload failed",
+      details: error.message,
+    }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({
-        error: "Upload failed",
-        details: error.message,
-      }),
-    };
+    });
   }
 }
