@@ -106,12 +106,14 @@ export default async function handler(request, context) {
   // Check if this is a scheduled function trigger or manual trigger
   const url = new URL(request.url);
   const isScheduled =
+    request.headers.get("x-netlify-event") === "schedule" || // Correct header for scheduled functions
     request.headers.get("x-netlify-scheduled") ||
     request.headers.get("x-cron-trigger") ||
     url.searchParams.get("cron") === "true" ||
     context.isScheduled; // Functions API v2 scheduled context
 
   console.log("Scheduled trigger detected:", isScheduled);
+  console.log("x-netlify-event header:", request.headers.get("x-netlify-event"));
 
   if (!isScheduled) {
     return new Response(
