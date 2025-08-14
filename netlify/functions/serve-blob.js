@@ -47,7 +47,8 @@ export const handler = async (event) => {
         process.env.NETLIFY_AUTH_TOKEN ||
         process.env.NETLIFY_API_TOKEN ||
         process.env.NETLIFY_ACCESS_TOKEN ||
-        process.env.NETLIFY_PERSONAL_ACCESS_TOKEN;
+        process.env.NETLIFY_PERSONAL_ACCESS_TOKEN ||
+        process.env.NETLIFY_FUNCTIONS_TOKEN; // This is the key token Netlify provides!
       
       console.log(`Serve-blob extracted site ID: ${siteId ? 'found' : 'not found'}`);
       console.log(`Serve-blob found auth token: ${token ? 'present' : 'missing'}`);
