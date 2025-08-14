@@ -1,5 +1,10 @@
 // No imports needed - using environment variables directly
 
+// Functions API v2 configuration
+export const config = {
+  method: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+};
+
 const getHeader = (headers, name) => {
   if (!headers) return undefined;
   const lowercaseName = name.toLowerCase();
@@ -11,7 +16,7 @@ const getHeader = (headers, name) => {
   return undefined;
 };
 
-export const handler = async (event) => {
+export default async function handler(request, context) {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
@@ -21,34 +26,33 @@ export const handler = async (event) => {
   };
 
   // Handle preflight requests
-  if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: corsHeaders, body: "" };
+  if (request.method === "OPTIONS") {
+    return new Response("", { status: 200, headers: corsHeaders });
   }
 
   const notionApiKey = process.env.NOTION_API_KEY;
   if (!notionApiKey) {
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({ error: "Notion API key missing" }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Notion API key missing" }),
-    };
+    });
   }
 
-  const query = event.queryStringParameters || {};
+  const url = new URL(request.url);
+  const query = Object.fromEntries(url.searchParams);
   let path = query.path || "/v1/pages";
   if (!path.startsWith("/")) path = `/${path}`;
   if (!path.startsWith("/v1/")) {
-    return {
-      statusCode: 400,
+    return new Response(JSON.stringify({ error: "Only Notion /v1 endpoints are allowed" }), {
+      status: 400,
       headers: corsHeaders,
-      body: JSON.stringify({ error: "Only Notion /v1 endpoints are allowed" }),
-    };
+    });
   }
 
   const targetUrl = `https://api.notion.com${path}`;
-  const method = (event.httpMethod || "POST").toUpperCase();
+  const method = request.method.toUpperCase();
   const requestContentType =
-    getHeader(event.headers, "content-type") || "application/json";
+    request.headers.get("content-type") || "application/json";
 
   const upstreamHeaders = {
     Authorization: `Bearer ${notionApiKey}`,
@@ -62,15 +66,12 @@ export const handler = async (event) => {
     );
     let data = undefined;
 
-    if (hasBodyMethod && event.body) {
-      const rawBody = event.isBase64Encoded
-        ? Buffer.from(event.body, "base64").toString()
-        : event.body;
-      data = requestContentType.includes("application/json")
-        ? typeof rawBody === "string"
-          ? JSON.parse(rawBody)
-          : rawBody
-        : rawBody;
+    if (hasBodyMethod && request.body) {
+      if (requestContentType.includes("application/json")) {
+        data = await request.json();
+      } else {
+        data = await request.text();
+      }
     }
 
     // If creating a page and no parent is set, inject the database_id from shared config
@@ -135,22 +136,22 @@ export const handler = async (event) => {
       responseData = "";
     }
 
-    return {
-      statusCode: response.status,
-      headers: corsHeaders,
-      body:
-        typeof responseData === "string"
-          ? responseData
-          : JSON.stringify(responseData),
-    };
+    return new Response(
+      typeof responseData === "string"
+        ? responseData
+        : JSON.stringify(responseData),
+      {
+        status: response.status,
+        headers: corsHeaders,
+      }
+    );
   } catch (error) {
     console.error("Submit to Notion error:", error);
-    return {
-      statusCode: 500,
+    return new Response(JSON.stringify({
+      error: error.message || "Unknown error",
+    }), {
+      status: 500,
       headers: corsHeaders,
-      body: JSON.stringify({
-        error: error.message || "Unknown error",
-      }),
-    };
+    });
   }
 };
