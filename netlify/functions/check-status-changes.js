@@ -1,5 +1,11 @@
 import { checkStatusAndNotify } from "./email-utils.js";
 
+// Functions API v2 configuration
+export const config = {
+  method: ["GET", "POST"],
+  schedule: "*/2 * * * *" // Every 2 minutes as configured in netlify.toml
+};
+
 // Get total count of pages in database for comparison
 const getDatabaseTotalCount = async (databaseId, notionApiKey) => {
   try {
@@ -90,34 +96,43 @@ const getDatabasePages = async (databaseId, notionApiKey) => {
   }
 };
 
-export const handler = async (event, context) => {
+export default async function handler(request, context) {
+  console.log("=== CHECK STATUS FUNCTION TRIGGERED ===");
+  console.log("Request method:", request.method);
+  console.log("Request URL:", request.url);
+  console.log("Context keys:", Object.keys(context || {}));
+  console.log("Headers:", Object.fromEntries(request.headers.entries()));
+  
   // Check if this is a scheduled function trigger or manual trigger
+  const url = new URL(request.url);
   const isScheduled =
-    event.headers?.["x-netlify-scheduled"] ||
-    event.headers?.["x-cron-trigger"] ||
-    event.queryStringParameters?.cron === "true";
+    request.headers.get("x-netlify-scheduled") ||
+    request.headers.get("x-cron-trigger") ||
+    url.searchParams.get("cron") === "true" ||
+    context.isScheduled; // Functions API v2 scheduled context
+  
+  console.log("Scheduled trigger detected:", isScheduled);
 
   if (!isScheduled) {
-    return {
-      statusCode: 403,
-      body: JSON.stringify({
-        error:
-          "This function can only be triggered by scheduled events or manual testing",
-        message: "Use ?cron=true for manual testing",
-      }),
-    };
+    return new Response(JSON.stringify({
+      error: "This function can only be triggered by scheduled events or manual testing",
+      message: "Use ?cron=true for manual testing",
+    }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const notionApiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_DATABASE_ID;
   console.log("Database ID:", databaseId);
   if (!notionApiKey || !databaseId) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Notion configuration missing or database ID not set",
-      }),
-    };
+    return new Response(JSON.stringify({
+      error: "Notion configuration missing or database ID not set",
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   try {
@@ -165,19 +180,19 @@ export const handler = async (event, context) => {
 
     console.log("Scheduled job completed:", result);
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify(result),
-    };
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
   } catch (error) {
     console.error("Scheduled job failed:", error.message);
-    return {
-      statusCode: 500,
-      body: JSON.stringify({
-        error: "Scheduled job failed",
-        message: error.message,
-        timestamp: new Date().toISOString(),
-      }),
-    };
+    return new Response(JSON.stringify({
+      error: "Scheduled job failed",
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 };
