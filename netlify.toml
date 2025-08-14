@@ -15,6 +15,10 @@
   [functions."serve-blob"]
   # This function serves files from Netlify Blobs
 
+# Explicitly enable Netlify Blobs
+[blobs]
+  # This ensures Netlify Blobs is available for the site
+
 [[headers]]
   for = "/.netlify/functions/*"
   [headers.values]

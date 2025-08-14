@@ -27,24 +27,42 @@ export const handler = async (event) => {
     let store;
     try {
       store = getStore("temp-uploads");
-      console.log(
-        "Netlify Blobs store initialized successfully for file serving"
-      );
+      console.log("Netlify Blobs store initialized successfully for file serving");
     } catch (storeError) {
-      console.error("Failed to initialize Netlify Blobs store:", storeError);
-      console.error("Environment context:", {
-        NETLIFY: process.env.NETLIFY,
-        CONTEXT: process.env.CONTEXT,
-        NODE_ENV: process.env.NODE_ENV,
-      });
-
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          error: `File storage not available: ${storeError.message}. Please ensure you're running on Netlify or using 'netlify dev' for local development.`,
-        }),
-      };
+      console.log("Automatic Netlify Blobs configuration failed for serve-blob, trying manual setup...");
+      
+      // Try manual configuration
+      const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
+      const token = process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+      
+      if (siteId && token) {
+        try {
+          store = getStore({
+            name: "temp-uploads",
+            siteID: siteId,
+            token: token
+          });
+          console.log("Netlify Blobs store initialized with manual configuration for serving");
+        } catch (manualError) {
+          console.error("Manual Netlify Blobs configuration failed for serve-blob:", manualError);
+          return {
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              error: `File storage unavailable: ${manualError.message}`,
+            }),
+          };
+        }
+      } else {
+        console.error("No Netlify Blobs configuration available for serve-blob");
+        return {
+          statusCode: 500,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            error: "File storage not configured. Please deploy to Netlify or use 'netlify dev' for local development.",
+          }),
+        };
+      }
     }
 
     // Extract filename from the path

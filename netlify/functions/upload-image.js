@@ -155,39 +155,55 @@ export const handler = async (event) => {
         console.log(`Creating public URL for Notion: ${publicUrl}`);
 
         // Store the file in Netlify Blobs so our serve-blob function can access it
-        // Netlify automatically provides blobs context in production
-        // For local development, use netlify dev command
         console.log("Environment check:", {
           hasNetlifyContext: !!process.env.NETLIFY,
           deployContext: process.env.CONTEXT,
           siteId: process.env.NETLIFY_SITE_ID ? "present" : "missing",
           deployId: process.env.DEPLOY_ID ? "present" : "missing",
+          url: process.env.URL || "not set",
+          deployUrl: process.env.DEPLOY_URL || "not set"
         });
 
         let store;
         try {
+          // First try automatic configuration
           store = getStore("temp-uploads");
-          console.log("Netlify Blobs store initialized successfully");
+          console.log("Netlify Blobs store initialized with automatic configuration");
         } catch (storeError) {
-          console.error(
-            "Failed to initialize Netlify Blobs store:",
-            storeError
-          );
-          console.error("Error details:", {
-            message: storeError.message,
-            stack: storeError.stack,
-            environment: {
-              NETLIFY: process.env.NETLIFY,
-              CONTEXT: process.env.CONTEXT,
-              NODE_ENV: process.env.NODE_ENV,
-            },
-          });
-
-          return {
-            success: false,
-            fileName,
-            error: `File storage initialization failed: ${storeError.message}. Please ensure you're running on Netlify or using 'netlify dev' for local development.`,
-          };
+          console.log("Automatic Netlify Blobs configuration failed, trying manual setup...");
+          
+          // Try manual configuration with available environment variables
+          const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
+          const token = process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+          
+          if (siteId && token) {
+            try {
+              store = getStore({
+                name: "temp-uploads",
+                siteID: siteId,
+                token: token
+              });
+              console.log("Netlify Blobs store initialized with manual configuration");
+            } catch (manualError) {
+              console.error("Manual Netlify Blobs configuration also failed:", manualError);
+              return {
+                success: false,
+                fileName,
+                error: `File storage unavailable: ${manualError.message}. Please check Netlify Blobs is enabled for your site.`,
+              };
+            }
+          } else {
+            console.error("No Netlify Blobs configuration available");
+            console.error("Available environment variables:", Object.keys(process.env).filter(key => 
+              key.includes('NETLIFY') || key.includes('SITE') || key.includes('TOKEN')
+            ));
+            
+            return {
+              success: false,
+              fileName,
+              error: `File storage not configured. This appears to be running outside of Netlify environment. Please deploy to Netlify or use 'netlify dev' for local development.`,
+            };
+          }
         }
 
         try {
