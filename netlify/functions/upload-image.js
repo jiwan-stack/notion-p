@@ -164,22 +164,31 @@ export const handler = async (event) => {
           deployUrl: process.env.DEPLOY_URL || "not set",
         });
 
+        // Extract site ID from URL if not available in environment
+        let extractedSiteId = null;
+        const siteUrl = process.env.URL || process.env.DEPLOY_URL;
+        if (siteUrl && siteUrl.includes('.netlify.app')) {
+          // Extract site name from URL like https://notion-p.netlify.app
+          const match = siteUrl.match(/https?:\/\/([^.]+)\.netlify\.app/);
+          if (match) {
+            extractedSiteId = match[1];
+            console.log(`Extracted site identifier from URL: ${extractedSiteId}`);
+          }
+        }
+
         let store;
         try {
           // First try automatic configuration
           store = getStore("temp-uploads");
-          console.log(
-            "Netlify Blobs store initialized with automatic configuration"
-          );
+          console.log("Netlify Blobs store initialized with automatic configuration");
         } catch (storeError) {
-          console.log(
-            "Automatic Netlify Blobs configuration failed, trying manual setup..."
-          );
+          console.log("Automatic Netlify Blobs configuration failed, trying manual setup...");
 
           // Try manual configuration with available environment variables
-          const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
-          const token =
-            process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+          const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID || extractedSiteId;
+          const token = process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+
+          console.log(`Attempting manual configuration with siteId: ${siteId ? 'present' : 'missing'}, token: ${token ? 'present' : 'missing'}`);
 
           if (siteId && token) {
             try {
@@ -188,36 +197,30 @@ export const handler = async (event) => {
                 siteID: siteId,
                 token: token,
               });
-              console.log(
-                "Netlify Blobs store initialized with manual configuration"
-              );
+              console.log("Netlify Blobs store initialized with manual configuration");
             } catch (manualError) {
-              console.error(
-                "Manual Netlify Blobs configuration also failed:",
-                manualError
-              );
+              console.error("Manual Netlify Blobs configuration also failed:", manualError);
               return {
                 success: false,
                 fileName,
-                error: `File storage unavailable: ${manualError.message}. Please check Netlify Blobs is enabled for your site.`,
+                error: `File storage unavailable: ${manualError.message}. Please check Netlify Blobs is enabled for your site and add NETLIFY_TOKEN environment variable.`,
               };
             }
           } else {
             console.error("No Netlify Blobs configuration available");
-            console.error(
-              "Available environment variables:",
-              Object.keys(process.env).filter(
-                (key) =>
-                  key.includes("NETLIFY") ||
-                  key.includes("SITE") ||
-                  key.includes("TOKEN")
-              )
-            );
-
+            console.error("Available environment variables:", Object.keys(process.env).filter(key => 
+              key.includes('NETLIFY') || key.includes('SITE') || key.includes('TOKEN') || key.includes('URL')
+            ));
+            
+            // Provide more specific guidance
+            const missingVars = [];
+            if (!siteId) missingVars.push('NETLIFY_SITE_ID');
+            if (!token) missingVars.push('NETLIFY_TOKEN');
+            
             return {
               success: false,
               fileName,
-              error: `File storage not configured. This appears to be running outside of Netlify environment. Please deploy to Netlify or use 'netlify dev' for local development.`,
+              error: `Netlify Blobs not configured. Missing: ${missingVars.join(', ')}. Please add these environment variables in your Netlify site settings.`,
             };
           }
         }

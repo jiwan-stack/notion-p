@@ -24,6 +24,18 @@ export const handler = async (event) => {
   try {
     // Netlify automatically provides blobs context in production
     // For local development, use netlify dev command
+    
+    // Extract site ID from URL if not available in environment
+    let extractedSiteId = null;
+    const siteUrl = process.env.URL || process.env.DEPLOY_URL;
+    if (siteUrl && siteUrl.includes('.netlify.app')) {
+      const match = siteUrl.match(/https?:\/\/([^.]+)\.netlify\.app/);
+      if (match) {
+        extractedSiteId = match[1];
+        console.log(`Extracted site identifier from URL for serve-blob: ${extractedSiteId}`);
+      }
+    }
+    
     let store;
     try {
       store = getStore("temp-uploads");
@@ -32,8 +44,10 @@ export const handler = async (event) => {
       console.log("Automatic Netlify Blobs configuration failed for serve-blob, trying manual setup...");
       
       // Try manual configuration
-      const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
+      const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID || extractedSiteId;
       const token = process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+      
+      console.log(`Serve-blob manual config attempt with siteId: ${siteId ? 'present' : 'missing'}, token: ${token ? 'present' : 'missing'}`);
       
       if (siteId && token) {
         try {
@@ -49,17 +63,21 @@ export const handler = async (event) => {
             statusCode: 500,
             headers: corsHeaders,
             body: JSON.stringify({
-              error: `File storage unavailable: ${manualError.message}`,
+              error: `File storage unavailable: ${manualError.message}. Please check Netlify Blobs is enabled and NETLIFY_TOKEN is set.`,
             }),
           };
         }
       } else {
         console.error("No Netlify Blobs configuration available for serve-blob");
+        const missingVars = [];
+        if (!siteId) missingVars.push('NETLIFY_SITE_ID');
+        if (!token) missingVars.push('NETLIFY_TOKEN');
+        
         return {
           statusCode: 500,
           headers: corsHeaders,
           body: JSON.stringify({
-            error: "File storage not configured. Please deploy to Netlify or use 'netlify dev' for local development.",
+            error: `Netlify Blobs not configured. Missing: ${missingVars.join(', ')}. Please add these environment variables in your Netlify site settings.`,
           }),
         };
       }
