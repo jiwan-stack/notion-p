@@ -3,7 +3,8 @@ import { getStore } from "@netlify/blobs";
 // Use native fetch instead of axios to avoid module compatibility issues
 // Note: This function now creates Notion pages with file attachments using public URLs
 
-export const handler = async (event) => {
+// Use Functions API v2 for automatic Netlify Blobs context
+export default async function handler(event, context) {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers":
@@ -155,13 +156,13 @@ export const handler = async (event) => {
         console.log(`Creating public URL for Notion: ${publicUrl}`);
 
         // Store the file in Netlify Blobs so our serve-blob function can access it
-        // Automatic configuration with fallback
+        // Functions API v2 should provide automatic Blobs context
         let store;
         try {
-          // First try automatic configuration
+          // Functions API v2 should automatically provide the context
           store = getStore("temp-uploads");
           console.log(
-            "Netlify Blobs store initialized successfully with automatic configuration"
+            "Netlify Blobs store initialized successfully with Functions API v2"
           );
         } catch (storeError) {
           console.log(

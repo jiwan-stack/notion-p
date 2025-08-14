@@ -1,6 +1,7 @@
 import { getStore } from "@netlify/blobs";
 
-export const handler = async (event) => {
+// Use Functions API v2 for automatic Netlify Blobs context
+export default async function handler(event, context) {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
@@ -22,13 +23,13 @@ export const handler = async (event) => {
   }
 
   try {
-    // Netlify automatically provides blobs context in production
+    // Functions API v2 should provide automatic Blobs context
     // For local development, use netlify dev command
     let store;
     try {
-      // First try automatic configuration
+      // Functions API v2 should automatically provide the context
       store = getStore("temp-uploads");
-      console.log("Netlify Blobs store initialized successfully for file serving with automatic configuration");
+      console.log("Netlify Blobs store initialized successfully with Functions API v2");
     } catch (storeError) {
       console.log("Automatic configuration failed for serve-blob, trying manual configuration...");
       
