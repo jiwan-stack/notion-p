@@ -95,15 +95,45 @@ export const handler = async (event) => {
           return {
             success: false,
             fileName,
-            error: "No file data provided",
+            error: "No file data provided - file may be corrupted or empty",
           };
         }
 
         console.log(`File ${fileName} data length: ${fileData.length}`);
 
-        // Convert base64 to buffer
-        const buffer = Buffer.from(fileData, "base64");
-        console.log(`File ${fileName} buffer length: ${buffer.length}`);
+        // Validate base64 data
+        if (typeof fileData !== "string" || fileData.length === 0) {
+          console.log(`File ${fileName} has invalid base64 data`);
+          return {
+            success: false,
+            fileName,
+            error: "Invalid file data - file conversion failed",
+          };
+        }
+
+        // Convert base64 to buffer with error handling
+        let buffer;
+        try {
+          buffer = Buffer.from(fileData, "base64");
+          console.log(`File ${fileName} buffer length: ${buffer.length}`);
+
+          // Validate buffer size
+          if (buffer.length === 0) {
+            console.log(`File ${fileName} resulted in empty buffer`);
+            return {
+              success: false,
+              fileName,
+              error: "File conversion resulted in empty data",
+            };
+          }
+        } catch (bufferError) {
+          console.error(`Error converting ${fileName} to buffer:`, bufferError);
+          return {
+            success: false,
+            fileName,
+            error: `File conversion failed: ${bufferError.message}`,
+          };
+        }
 
         // Create unique filename for logging purposes
         const timestamp = Date.now();
@@ -133,9 +163,20 @@ export const handler = async (event) => {
           console.log(
             `Storing file ${fileName} in Netlify Blobs for public access...`
           );
+
+          // Validate store is available
+          if (!store) {
+            throw new Error("Netlify Blobs store is not available");
+          }
+
           await store.set(uniqueFileName, buffer, {
             contentType: mimeType,
             ttl: 24 * 60 * 60, // 24 hours
+            metadata: {
+              originalName: fileName,
+              uploadTime: new Date().toISOString(),
+              fileSize: buffer.length,
+            },
           });
           console.log(`File ${fileName} stored successfully in Netlify Blobs`);
         } catch (blobError) {
@@ -143,11 +184,26 @@ export const handler = async (event) => {
             `Error storing file ${fileName} in Netlify Blobs:`,
             blobError
           );
+
+          // Provide more specific error messages
+          let errorMessage = "Failed to store file for public access";
+          if (blobError.message.includes("quota")) {
+            errorMessage =
+              "Storage quota exceeded - please try with fewer/smaller files";
+          } else if (
+            blobError.message.includes("network") ||
+            blobError.message.includes("timeout")
+          ) {
+            errorMessage =
+              "Network error during file storage - please try again";
+          } else {
+            errorMessage = `Storage error: ${blobError.message}`;
+          }
+
           return {
             success: false,
             fileName,
-            error:
-              "Failed to store file for public access: " + blobError.message,
+            error: errorMessage,
           };
         }
 
@@ -202,11 +258,30 @@ export const handler = async (event) => {
     const successfulUploads = results.filter((r) => r.success);
     const failedUploads = results.filter((r) => !r.success);
 
+    console.log(
+      `Upload batch completed: ${successfulUploads.length} successful, ${failedUploads.length} failed out of ${files.length} total files`
+    );
+
+    if (failedUploads.length > 0) {
+      console.warn(
+        "Failed uploads:",
+        failedUploads.map((f) => `${f.fileName}: ${f.error}`)
+      );
+    }
+
+    if (successfulUploads.length > 0) {
+      console.log(
+        "Successful uploads:",
+        successfulUploads.map((f) => f.fileName)
+      );
+    }
+
+    // Return detailed response even if some files failed
     return {
       statusCode: 200,
       headers: corsHeaders,
       body: JSON.stringify({
-        success: true,
+        success: successfulUploads.length > 0, // Success if at least one file uploaded
         uploadedFiles: successfulUploads,
         failedFiles: failedUploads,
         message: `Successfully uploaded ${successfulUploads.length} files${
@@ -215,6 +290,16 @@ export const handler = async (event) => {
         totalFiles: files.length,
         successfulCount: successfulUploads.length,
         failedCount: failedUploads.length,
+        details: {
+          successful: successfulUploads.map((f) => ({
+            fileName: f.fileName,
+            publicUrl: f.publicUrl,
+          })),
+          failed: failedUploads.map((f) => ({
+            fileName: f.fileName,
+            error: f.error,
+          })),
+        },
       }),
     };
   } catch (error) {

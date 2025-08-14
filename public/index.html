@@ -527,6 +527,9 @@
         const incomingFiles = Array.from(files);
         hideError();
 
+        // Debug logging for troubleshooting
+        logUploadDebugInfo(incomingFiles);
+
         if (incomingFiles.length > MAX_FILES) {
           showError(`Maximum ${MAX_FILES} files allowed.`);
           return;
@@ -546,11 +549,16 @@
 
         if (errors.length > 0) {
           showError(errors.join("\n"));
+          // Don't return here - still allow valid files to be processed
         }
 
         selectedFiles = validFiles;
         updateFilePreview();
         updateFileInput();
+
+        console.log(
+          `File selection completed: ${validFiles.length} valid files, ${errors.length} invalid files`
+        );
       }
 
       let selectedFiles = [];
@@ -582,7 +590,35 @@
           return `File "${file.name}" is not a supported image format.`;
         }
 
+        // Additional validation for common issues
+        if (file.size === 0) {
+          return `File "${file.name}" is empty.`;
+        }
+
+        // Check for very large file names that might cause issues
+        if (file.name.length > 255) {
+          return `File "${file.name}" has a name that is too long (max 255 characters).`;
+        }
+
         return null;
+      }
+
+      function logUploadDebugInfo(files) {
+        console.log("=== UPLOAD DEBUG INFO ===");
+        console.log(`Total files selected: ${files.length}`);
+        console.log(`Max files allowed: ${MAX_FILES}`);
+        console.log(`Max file size: ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        console.log("Supported types:", SUPPORTED_TYPES);
+
+        files.forEach((file, index) => {
+          console.log(`File ${index + 1}:`, {
+            name: file.name,
+            size: `${(file.size / 1024 / 1024).toFixed(2)}MB`,
+            type: file.type,
+            lastModified: new Date(file.lastModified).toISOString(),
+          });
+        });
+        console.log("=== END DEBUG INFO ===");
       }
 
       function createFilePreview(file, index) {
@@ -644,22 +680,41 @@
         try {
           // Convert files to base64 for direct upload
           const filePromises = files.map(async (file) => {
-            return new Promise((resolve) => {
+            return new Promise((resolve, reject) => {
               const reader = new FileReader();
               reader.onload = () => {
-                const base64Data = reader.result.split(",")[1]; // Remove data:image/...;base64, prefix
-                console.log(`File ${file.name}:`, {
-                  name: file.name,
-                  type: file.type,
-                  size: file.size,
-                  dataLength: base64Data ? base64Data.length : 0,
-                });
-                resolve({
-                  name: file.name,
-                  type: file.type,
-                  size: file.size,
-                  data: base64Data,
-                });
+                try {
+                  const base64Data = reader.result.split(",")[1]; // Remove data:image/...;base64, prefix
+                  console.log(`File ${file.name}:`, {
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    dataLength: base64Data ? base64Data.length : 0,
+                  });
+                  resolve({
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    data: base64Data,
+                  });
+                } catch (error) {
+                  console.error(`Error processing file ${file.name}:`, error);
+                  reject(
+                    new Error(
+                      `Failed to process ${file.name}: ${error.message}`
+                    )
+                  );
+                }
+              };
+              reader.onerror = () => {
+                console.error(`Error reading file ${file.name}:`, reader.error);
+                reject(
+                  new Error(
+                    `Failed to read ${file.name}: ${
+                      reader.error?.message || "Unknown error"
+                    }`
+                  )
+                );
               };
               reader.readAsDataURL(file);
             });
@@ -698,9 +753,41 @@
           const data = await res.json();
           console.log("Upload response:", data);
 
+          // Handle partial failures with detailed reporting
           if (!data.uploadedFiles || data.uploadedFiles.length === 0) {
             console.error("Upload failed - no successful uploads:", data);
-            throw new Error("No files were successfully uploaded");
+
+            // Show specific error messages for failed files
+            if (data.failedFiles && data.failedFiles.length > 0) {
+              const errorMessages = data.failedFiles
+                .map((f) => `${f.fileName}: ${f.error}`)
+                .join("\n");
+              throw new Error(`All file uploads failed:\n${errorMessages}`);
+            } else {
+              throw new Error("No files were successfully uploaded");
+            }
+          }
+
+          // Report partial failures to user
+          if (data.failedFiles && data.failedFiles.length > 0) {
+            const failedFileNames = data.failedFiles
+              .map((f) => f.fileName)
+              .join(", ");
+            const errorDetails = data.failedFiles
+              .map((f) => `${f.fileName}: ${f.error}`)
+              .join("\n");
+            console.warn(`Some files failed to upload: ${failedFileNames}`);
+            console.warn("Failed file details:", errorDetails);
+
+            // Show a warning but don't stop the process
+            showError(
+              `Warning: ${data.failedFiles.length} file(s) failed to upload: ${failedFileNames}\n\nDetails:\n${errorDetails}`
+            );
+
+            // Auto-hide the warning after 10 seconds
+            setTimeout(() => {
+              hideError();
+            }, 10000);
           }
 
           console.log("Successfully uploaded files:", data.uploadedFiles);

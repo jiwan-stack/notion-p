@@ -9,3 +9,8 @@ coverage/
 .netlify
 .env
 .env.example
+script/
+
+# Debug and test files
+debug-upload.js
+test-files/
