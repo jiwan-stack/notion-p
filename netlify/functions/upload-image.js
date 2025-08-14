@@ -161,31 +161,41 @@ export const handler = async (event) => {
           siteId: process.env.NETLIFY_SITE_ID ? "present" : "missing",
           deployId: process.env.DEPLOY_ID ? "present" : "missing",
           url: process.env.URL || "not set",
-          deployUrl: process.env.DEPLOY_URL || "not set"
+          deployUrl: process.env.DEPLOY_URL || "not set",
         });
 
         let store;
         try {
           // First try automatic configuration
           store = getStore("temp-uploads");
-          console.log("Netlify Blobs store initialized with automatic configuration");
+          console.log(
+            "Netlify Blobs store initialized with automatic configuration"
+          );
         } catch (storeError) {
-          console.log("Automatic Netlify Blobs configuration failed, trying manual setup...");
-          
+          console.log(
+            "Automatic Netlify Blobs configuration failed, trying manual setup..."
+          );
+
           // Try manual configuration with available environment variables
           const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID;
-          const token = process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
-          
+          const token =
+            process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
+
           if (siteId && token) {
             try {
               store = getStore({
                 name: "temp-uploads",
                 siteID: siteId,
-                token: token
+                token: token,
               });
-              console.log("Netlify Blobs store initialized with manual configuration");
+              console.log(
+                "Netlify Blobs store initialized with manual configuration"
+              );
             } catch (manualError) {
-              console.error("Manual Netlify Blobs configuration also failed:", manualError);
+              console.error(
+                "Manual Netlify Blobs configuration also failed:",
+                manualError
+              );
               return {
                 success: false,
                 fileName,
@@ -194,10 +204,16 @@ export const handler = async (event) => {
             }
           } else {
             console.error("No Netlify Blobs configuration available");
-            console.error("Available environment variables:", Object.keys(process.env).filter(key => 
-              key.includes('NETLIFY') || key.includes('SITE') || key.includes('TOKEN')
-            ));
-            
+            console.error(
+              "Available environment variables:",
+              Object.keys(process.env).filter(
+                (key) =>
+                  key.includes("NETLIFY") ||
+                  key.includes("SITE") ||
+                  key.includes("TOKEN")
+              )
+            );
+
             return {
               success: false,
               fileName,
