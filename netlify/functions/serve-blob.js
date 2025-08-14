@@ -6,7 +6,7 @@ export const config = {
 };
 
 // Use Functions API v2 for automatic Netlify Blobs context
-export default async function handler(event, context) {
+export default async function handler(request, context) {
   const corsHeaders = {
     "Access-Control-Allow-Origin": "*",
     "Access-Control-Allow-Headers": "Content-Type",
@@ -14,16 +14,9 @@ export default async function handler(event, context) {
     "Access-Control-Max-Age": "86400",
   };
 
-  // Handle preflight requests - Functions API v2 uses different event structure
-  const method =
-    event.httpMethod ||
-    event.requestContext?.http?.method ||
-    context?.requestContext?.http?.method;
-  console.log(
-    `Serve-blob function received method: ${method}, event keys: ${Object.keys(
-      event
-    ).join(", ")}`
-  );
+  // Functions API v2 uses Request object
+  const method = request.method;
+  console.log(`Serve-blob function received method: ${method}`);
 
   if (method === "OPTIONS") {
     return new Response("", { status: 200, headers: corsHeaders });
@@ -35,10 +28,6 @@ export default async function handler(event, context) {
         error: "Method Not Allowed",
         received: method,
         expected: "GET",
-        debug: {
-          eventKeys: Object.keys(event),
-          contextKeys: Object.keys(context || {}),
-        },
       }),
       {
         status: 405,
@@ -151,8 +140,9 @@ export default async function handler(event, context) {
       }
     }
 
-    // Extract filename from the path
-    const pathSegments = event.path.split("/");
+    // Extract filename from the URL path
+    const url = new URL(request.url);
+    const pathSegments = url.pathname.split("/");
     const filename = pathSegments[pathSegments.length - 1];
 
     if (!filename) {
