@@ -5,7 +5,7 @@ import { getStore } from "@netlify/blobs";
 
 // Functions API v2 configuration
 export const config = {
-  method: ["POST", "OPTIONS"]
+  method: ["POST", "OPTIONS"],
 };
 
 // Use Functions API v2 for automatic Netlify Blobs context
@@ -19,23 +19,36 @@ export default async function handler(event, context) {
   };
 
   // Handle preflight requests - Functions API v2 uses different event structure
-  const method = event.httpMethod || event.requestContext?.http?.method || context?.requestContext?.http?.method;
-  console.log(`Upload function received method: ${method}, event keys: ${Object.keys(event).join(', ')}`);
-  
+  const method =
+    event.httpMethod ||
+    event.requestContext?.http?.method ||
+    context?.requestContext?.http?.method;
+  console.log(
+    `Upload function received method: ${method}, event keys: ${Object.keys(
+      event
+    ).join(", ")}`
+  );
+
   if (method === "OPTIONS") {
     return new Response("", { status: 200, headers: corsHeaders });
   }
 
   if (method !== "POST") {
-    return new Response(JSON.stringify({ 
-      error: "Method Not Allowed", 
-      received: method,
-      expected: "POST",
-      debug: { eventKeys: Object.keys(event), contextKeys: Object.keys(context || {}) }
-    }), {
-      status: 405,
-      headers: corsHeaders,
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Method Not Allowed",
+        received: method,
+        expected: "POST",
+        debug: {
+          eventKeys: Object.keys(event),
+          contextKeys: Object.keys(context || {}),
+        },
+      }),
+      {
+        status: 405,
+        headers: corsHeaders,
+      }
+    );
   }
 
   const notionApiKey = process.env.NOTION_API_KEY;
