@@ -1,5 +1,10 @@
 import { getStore } from "@netlify/blobs";
 
+// Functions API v2 configuration
+export const config = {
+  method: ["GET", "OPTIONS"]
+};
+
 // Use Functions API v2 for automatic Netlify Blobs context
 export default async function handler(event, context) {
   const corsHeaders = {
@@ -9,13 +14,21 @@ export default async function handler(event, context) {
     "Access-Control-Max-Age": "86400",
   };
 
-  // Handle preflight requests
-  if (event.httpMethod === "OPTIONS") {
+  // Handle preflight requests - Functions API v2 uses different event structure
+  const method = event.httpMethod || event.requestContext?.http?.method || context?.requestContext?.http?.method;
+  console.log(`Serve-blob function received method: ${method}, event keys: ${Object.keys(event).join(', ')}`);
+  
+  if (method === "OPTIONS") {
     return new Response("", { status: 200, headers: corsHeaders });
   }
 
-  if (event.httpMethod !== "GET") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+  if (method !== "GET") {
+    return new Response(JSON.stringify({ 
+      error: "Method Not Allowed", 
+      received: method,
+      expected: "GET",
+      debug: { eventKeys: Object.keys(event), contextKeys: Object.keys(context || {}) }
+    }), {
       status: 405,
       headers: corsHeaders,
     });

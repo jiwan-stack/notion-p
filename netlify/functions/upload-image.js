@@ -3,6 +3,11 @@ import { getStore } from "@netlify/blobs";
 // Use native fetch instead of axios to avoid module compatibility issues
 // Note: This function now creates Notion pages with file attachments using public URLs
 
+// Functions API v2 configuration
+export const config = {
+  method: ["POST", "OPTIONS"]
+};
+
 // Use Functions API v2 for automatic Netlify Blobs context
 export default async function handler(event, context) {
   const corsHeaders = {
@@ -13,13 +18,21 @@ export default async function handler(event, context) {
     "Access-Control-Max-Age": "86400",
   };
 
-  // Handle preflight requests
-  if (event.httpMethod === "OPTIONS") {
+  // Handle preflight requests - Functions API v2 uses different event structure
+  const method = event.httpMethod || event.requestContext?.http?.method || context?.requestContext?.http?.method;
+  console.log(`Upload function received method: ${method}, event keys: ${Object.keys(event).join(', ')}`);
+  
+  if (method === "OPTIONS") {
     return new Response("", { status: 200, headers: corsHeaders });
   }
 
-  if (event.httpMethod !== "POST") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
+  if (method !== "POST") {
+    return new Response(JSON.stringify({ 
+      error: "Method Not Allowed", 
+      received: method,
+      expected: "POST",
+      debug: { eventKeys: Object.keys(event), contextKeys: Object.keys(context || {}) }
+    }), {
       status: 405,
       headers: corsHeaders,
     });
