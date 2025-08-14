@@ -3,11 +3,17 @@
   publish = "public"
   # Enable Netlify Blobs during build
   command = "npm run enable-blobs"
+  # Exclude unnecessary files from build
+  ignore = "node_modules/**/*"
 
 [functions]
   directory = "netlify/functions"
-  # Enable Netlify Blobs for all functions
-  included_files = ["**/*"]
+  # Only include necessary files for functions
+  included_files = [
+    "netlify/functions/**/*",
+    "package.json",
+    "package-lock.json"
+  ]
 
   [functions."check-status-changes"]
   schedule = "*/2 * * * *"
