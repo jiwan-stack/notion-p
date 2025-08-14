@@ -156,8 +156,39 @@ export const handler = async (event) => {
 
         // Store the file in Netlify Blobs so our serve-blob function can access it
         // Netlify automatically provides blobs context in production
-        // For local development, use netlify dev which auto-generates this
-        const store = getStore("temp-uploads");
+        // For local development, use netlify dev command
+        console.log("Environment check:", {
+          hasNetlifyContext: !!process.env.NETLIFY,
+          deployContext: process.env.CONTEXT,
+          siteId: process.env.NETLIFY_SITE_ID ? "present" : "missing",
+          deployId: process.env.DEPLOY_ID ? "present" : "missing",
+        });
+
+        let store;
+        try {
+          store = getStore("temp-uploads");
+          console.log("Netlify Blobs store initialized successfully");
+        } catch (storeError) {
+          console.error(
+            "Failed to initialize Netlify Blobs store:",
+            storeError
+          );
+          console.error("Error details:", {
+            message: storeError.message,
+            stack: storeError.stack,
+            environment: {
+              NETLIFY: process.env.NETLIFY,
+              CONTEXT: process.env.CONTEXT,
+              NODE_ENV: process.env.NODE_ENV,
+            },
+          });
+
+          return {
+            success: false,
+            fileName,
+            error: `File storage initialization failed: ${storeError.message}. Please ensure you're running on Netlify or using 'netlify dev' for local development.`,
+          };
+        }
 
         try {
           console.log(

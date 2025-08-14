@@ -23,8 +23,29 @@ export const handler = async (event) => {
 
   try {
     // Netlify automatically provides blobs context in production
-    // For local development, use netlify dev which auto-generates this
-    const store = getStore("temp-uploads");
+    // For local development, use netlify dev command
+    let store;
+    try {
+      store = getStore("temp-uploads");
+      console.log(
+        "Netlify Blobs store initialized successfully for file serving"
+      );
+    } catch (storeError) {
+      console.error("Failed to initialize Netlify Blobs store:", storeError);
+      console.error("Environment context:", {
+        NETLIFY: process.env.NETLIFY,
+        CONTEXT: process.env.CONTEXT,
+        NODE_ENV: process.env.NODE_ENV,
+      });
+
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({
+          error: `File storage not available: ${storeError.message}. Please ensure you're running on Netlify or using 'netlify dev' for local development.`,
+        }),
+      };
+    }
 
     // Extract filename from the path
     const pathSegments = event.path.split("/");

@@ -4,14 +4,16 @@
 
 [functions]
   directory = "netlify/functions"
+  # Netlify automatically provides environment context for Blobs
 
   [functions."check-status-changes"]
   schedule = "*/2 * * * *"
 
-[blobs]
-  directory = ".netlify/blobs"
-  # Netlify automatically handles authentication and context
-  # No need to manually set NETLIFY_BLOBS_CONTEXT
+  [functions."upload-image"]
+  # This function uses Netlify Blobs for file storage
+  
+  [functions."serve-blob"]
+  # This function serves files from Netlify Blobs
 
 [[headers]]
   for = "/.netlify/functions/*"
@@ -20,3 +22,12 @@
     Access-Control-Allow-Headers = "Content-Type, Notion-Version, Authorization, X-Requested-With"
     Access-Control-Allow-Methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     Access-Control-Max-Age = "86400"
+
+# Environment configuration for development
+[context.dev.environment]
+  # Netlify Blobs will be automatically configured during netlify dev
+  NODE_ENV = "development"
+
+[context.production.environment]
+  # Netlify automatically provides NETLIFY_SITE_ID and authentication
+  NODE_ENV = "production"
