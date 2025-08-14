@@ -113,7 +113,10 @@ export default async function handler(request, context) {
     context.isScheduled; // Functions API v2 scheduled context
 
   console.log("Scheduled trigger detected:", isScheduled);
-  console.log("x-netlify-event header:", request.headers.get("x-netlify-event"));
+  console.log(
+    "x-netlify-event header:",
+    request.headers.get("x-netlify-event")
+  );
 
   if (!isScheduled) {
     return new Response(
