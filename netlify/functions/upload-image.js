@@ -160,27 +160,43 @@ export const handler = async (event) => {
         try {
           // First try automatic configuration
           store = getStore("temp-uploads");
-          console.log("Netlify Blobs store initialized successfully with automatic configuration");
+          console.log(
+            "Netlify Blobs store initialized successfully with automatic configuration"
+          );
         } catch (storeError) {
-          console.log("Automatic configuration failed, trying with explicit site ID...");
-          
+          console.log(
+            "Automatic configuration failed, trying with explicit site ID..."
+          );
+
           // Extract site ID from Netlify environment automatically
-          const siteId = process.env.NETLIFY_SITE_ID || 
-                        (process.env.URL && process.env.URL.includes('.netlify.app') 
-                          ? process.env.URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1] 
-                          : null) ||
-                        (process.env.DEPLOY_URL && process.env.DEPLOY_URL.includes('.netlify.app')
-                          ? process.env.DEPLOY_URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1]
-                          : null);
-          
-          console.log(`Extracted site ID: ${siteId ? 'found' : 'not found'}`);
-          console.log(`Available env vars: URL=${process.env.URL}, DEPLOY_URL=${process.env.DEPLOY_URL}, NETLIFY_SITE_ID=${process.env.NETLIFY_SITE_ID ? 'present' : 'missing'}`);
-          
+          const siteId =
+            process.env.NETLIFY_SITE_ID ||
+            (process.env.URL && process.env.URL.includes(".netlify.app")
+              ? process.env.URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1]
+              : null) ||
+            (process.env.DEPLOY_URL &&
+            process.env.DEPLOY_URL.includes(".netlify.app")
+              ? process.env.DEPLOY_URL.match(
+                  /https?:\/\/([^.]+)\.netlify\.app/
+                )?.[1]
+              : null);
+
+          console.log(`Extracted site ID: ${siteId ? "found" : "not found"}`);
+          console.log(
+            `Available env vars: URL=${process.env.URL}, DEPLOY_URL=${
+              process.env.DEPLOY_URL
+            }, NETLIFY_SITE_ID=${
+              process.env.NETLIFY_SITE_ID ? "present" : "missing"
+            }`
+          );
+
           if (siteId) {
             try {
               // Try with just siteID - Netlify should provide auth automatically
               store = getStore("temp-uploads", { siteID: siteId });
-              console.log("Netlify Blobs store initialized with extracted site ID");
+              console.log(
+                "Netlify Blobs store initialized with extracted site ID"
+              );
             } catch (siteIdError) {
               console.error("Site ID configuration also failed:", siteIdError);
               return {
