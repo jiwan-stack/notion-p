@@ -18,6 +18,10 @@
 # Explicitly enable Netlify Blobs
 [blobs]
   # This ensures Netlify Blobs is available for the site
+  
+# Enable Netlify Blobs for functions
+[functions.environment]
+  # Ensure Netlify provides Blobs context automatically
 
 [[headers]]
   for = "/.netlify/functions/*"

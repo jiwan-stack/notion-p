@@ -24,60 +24,127 @@ export const handler = async (event) => {
   try {
     // Netlify automatically provides blobs context in production
     // For local development, use netlify dev command
-    
+
     // Extract site ID from URL if not available in environment
     let extractedSiteId = null;
     const siteUrl = process.env.URL || process.env.DEPLOY_URL;
-    if (siteUrl && siteUrl.includes('.netlify.app')) {
+    if (siteUrl && siteUrl.includes(".netlify.app")) {
       const match = siteUrl.match(/https?:\/\/([^.]+)\.netlify\.app/);
       if (match) {
         extractedSiteId = match[1];
-        console.log(`Extracted site identifier from URL for serve-blob: ${extractedSiteId}`);
+        console.log(
+          `Extracted site identifier from URL for serve-blob: ${extractedSiteId}`
+        );
       }
     }
-    
+
     let store;
     try {
       store = getStore("temp-uploads");
-      console.log("Netlify Blobs store initialized successfully for file serving");
+      console.log(
+        "Netlify Blobs store initialized successfully for file serving"
+      );
     } catch (storeError) {
-      console.log("Automatic Netlify Blobs configuration failed for serve-blob, trying manual setup...");
-      
-      // Try manual configuration
-      const siteId = process.env.NETLIFY_SITE_ID || process.env.SITE_ID || extractedSiteId;
-      const token = process.env.NETLIFY_TOKEN || process.env.NETLIFY_AUTH_TOKEN;
-      
-      console.log(`Serve-blob manual config attempt with siteId: ${siteId ? 'present' : 'missing'}, token: ${token ? 'present' : 'missing'}`);
-      
+      console.log(
+        "Automatic Netlify Blobs configuration failed for serve-blob, trying manual setup..."
+      );
+
+      // Try manual configuration with multiple approaches
+      const siteId =
+        process.env.NETLIFY_SITE_ID || process.env.SITE_ID || extractedSiteId;
+      const token =
+        process.env.NETLIFY_TOKEN ||
+        process.env.NETLIFY_AUTH_TOKEN ||
+        process.env.NETLIFY_API_TOKEN;
+
+      console.log(
+        `Serve-blob manual config attempt with siteId: ${
+          siteId ? "present" : "missing"
+        }, token: ${token ? "present" : "missing"}`
+      );
+
+      let storeInitialized = false;
+      let lastError = null;
+
+      // Approach 1: Manual configuration with token
       if (siteId && token) {
         try {
           store = getStore({
             name: "temp-uploads",
             siteID: siteId,
-            token: token
+            token: token,
           });
-          console.log("Netlify Blobs store initialized with manual configuration for serving");
+          console.log(
+            "Netlify Blobs store initialized with manual token configuration for serving"
+          );
+          storeInitialized = true;
         } catch (manualError) {
-          console.error("Manual Netlify Blobs configuration failed for serve-blob:", manualError);
+          console.error(
+            "Manual token configuration failed for serve-blob:",
+            manualError
+          );
+          lastError = manualError;
+        }
+      }
+
+      // Approach 2: Try with just siteID
+      if (!storeInitialized && siteId) {
+        try {
+          store = getStore({
+            name: "temp-uploads",
+            siteID: siteId,
+          });
+          console.log(
+            "Netlify Blobs store initialized with siteID-only configuration for serving"
+          );
+          storeInitialized = true;
+        } catch (siteIdError) {
+          console.error(
+            "SiteID-only configuration failed for serve-blob:",
+            siteIdError
+          );
+          lastError = siteIdError;
+        }
+      }
+
+      // Approach 3: Try minimal configuration
+      if (!storeInitialized) {
+        try {
+          store = getStore("temp-uploads");
+          console.log(
+            "Netlify Blobs store initialized with minimal configuration for serving"
+          );
+          storeInitialized = true;
+        } catch (minimalError) {
+          console.error(
+            "Minimal configuration failed for serve-blob:",
+            minimalError
+          );
+          lastError = minimalError;
+        }
+      }
+
+      if (!storeInitialized) {
+        console.error(
+          "All Netlify Blobs configuration attempts failed for serve-blob"
+        );
+        const errorMessage = lastError?.message || "Unknown error";
+
+        if (errorMessage.includes("not been configured")) {
           return {
             statusCode: 500,
             headers: corsHeaders,
             body: JSON.stringify({
-              error: `File storage unavailable: ${manualError.message}. Please check Netlify Blobs is enabled and NETLIFY_TOKEN is set.`,
+              error: `Netlify Blobs is not enabled for this site. Please enable Netlify Blobs in your site settings.`,
             }),
           };
         }
-      } else {
-        console.error("No Netlify Blobs configuration available for serve-blob");
-        const missingVars = [];
-        if (!siteId) missingVars.push('NETLIFY_SITE_ID');
-        if (!token) missingVars.push('NETLIFY_TOKEN');
-        
+
         return {
           statusCode: 500,
           headers: corsHeaders,
           body: JSON.stringify({
-            error: `Netlify Blobs not configured. Missing: ${missingVars.join(', ')}. Please add these environment variables in your Netlify site settings.`,
+            error: `File storage not available: ${errorMessage}. Netlify Blobs may not be properly configured.`,
           }),
         };
       }
