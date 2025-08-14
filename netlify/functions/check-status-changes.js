@@ -3,7 +3,7 @@ import { checkStatusAndNotify } from "./email-utils.js";
 // Functions API v2 configuration
 export const config = {
   method: ["GET", "POST"],
-  schedule: "*/2 * * * *" // Every 2 minutes as configured in netlify.toml
+  schedule: "*/2 * * * *", // Every 2 minutes as configured in netlify.toml
 };
 
 // Get total count of pages in database for comparison
@@ -102,7 +102,7 @@ export default async function handler(request, context) {
   console.log("Request URL:", request.url);
   console.log("Context keys:", Object.keys(context || {}));
   console.log("Headers:", Object.fromEntries(request.headers.entries()));
-  
+
   // Check if this is a scheduled function trigger or manual trigger
   const url = new URL(request.url);
   const isScheduled =
@@ -110,29 +110,36 @@ export default async function handler(request, context) {
     request.headers.get("x-cron-trigger") ||
     url.searchParams.get("cron") === "true" ||
     context.isScheduled; // Functions API v2 scheduled context
-  
+
   console.log("Scheduled trigger detected:", isScheduled);
 
   if (!isScheduled) {
-    return new Response(JSON.stringify({
-      error: "This function can only be triggered by scheduled events or manual testing",
-      message: "Use ?cron=true for manual testing",
-    }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error:
+          "This function can only be triggered by scheduled events or manual testing",
+        message: "Use ?cron=true for manual testing",
+      }),
+      {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   const notionApiKey = process.env.NOTION_API_KEY;
   const databaseId = process.env.NOTION_DATABASE_ID;
   console.log("Database ID:", databaseId);
   if (!notionApiKey || !databaseId) {
-    return new Response(JSON.stringify({
-      error: "Notion configuration missing or database ID not set",
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Notion configuration missing or database ID not set",
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 
   try {
@@ -186,13 +193,16 @@ export default async function handler(request, context) {
     });
   } catch (error) {
     console.error("Scheduled job failed:", error.message);
-    return new Response(JSON.stringify({
-      error: "Scheduled job failed",
-      message: error.message,
-      timestamp: new Date().toISOString(),
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({
+        error: "Scheduled job failed",
+        message: error.message,
+        timestamp: new Date().toISOString(),
+      }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
-};
+}
