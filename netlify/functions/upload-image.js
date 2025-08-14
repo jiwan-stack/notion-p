@@ -161,124 +161,15 @@ export const handler = async (event) => {
           store = getStore("temp-uploads");
           console.log("Netlify Blobs store initialized successfully");
         } catch (storeError) {
-          console.error("Failed to initialize Netlify Blobs store:", storeError);
+          console.error(
+            "Failed to initialize Netlify Blobs store:",
+            storeError
+          );
           return {
             success: false,
             fileName,
             error: `File storage initialization failed: ${storeError.message}. Please check that Netlify Blobs is still enabled for your site.`,
           };
-        }
-
-          // Check for various automatic Netlify tokens
-          const token =
-            process.env.NETLIFY_TOKEN ||
-            process.env.NETLIFY_AUTH_TOKEN ||
-            process.env.NETLIFY_API_TOKEN ||
-            process.env.DEPLOY_TOKEN ||
-            process.env.GITHUB_TOKEN || // Sometimes available in build context
-            process.env.BUILD_TOKEN ||
-            // Try to construct from context if available
-            (process.env.NETLIFY && process.env.CONTEXT
-              ? "auto-generated"
-              : null);
-
-          console.log(
-            `Attempting manual configuration with siteId: ${
-              siteId ? "present" : "missing"
-            }, token: ${token ? "present" : "missing"}`
-          );
-
-          // Log all available environment variables for debugging
-          const netlifyVars = Object.keys(process.env).filter(
-            (key) =>
-              key.includes("NETLIFY") ||
-              key.includes("TOKEN") ||
-              key.includes("AUTH") ||
-              key.includes("API") ||
-              key.includes("DEPLOY") ||
-              key.includes("BUILD")
-          );
-          console.log(
-            "Available Netlify/Auth environment variables:",
-            netlifyVars
-          );
-
-          // Try different approaches to initialize the store
-          let storeInitialized = false;
-          let lastError = null;
-
-          // Approach 1: Manual configuration with token
-          if (siteId && token && token !== "auto-generated") {
-            try {
-              store = getStore({
-                name: "temp-uploads",
-                siteID: siteId,
-                token: token,
-              });
-              console.log(
-                "Netlify Blobs store initialized with manual token configuration"
-              );
-              storeInitialized = true;
-            } catch (manualError) {
-              console.error("Manual token configuration failed:", manualError);
-              lastError = manualError;
-            }
-          }
-
-          // Approach 2: Try with just siteID (sometimes works in Netlify environment)
-          if (!storeInitialized && siteId) {
-            try {
-              store = getStore({
-                name: "temp-uploads",
-                siteID: siteId,
-              });
-              console.log(
-                "Netlify Blobs store initialized with siteID-only configuration"
-              );
-              storeInitialized = true;
-            } catch (siteIdError) {
-              console.error("SiteID-only configuration failed:", siteIdError);
-              lastError = siteIdError;
-            }
-          }
-
-          // Approach 3: Try with minimal configuration
-          if (!storeInitialized) {
-            try {
-              // Sometimes Netlify provides implicit authentication in the runtime
-              store = getStore("temp-uploads");
-              console.log(
-                "Netlify Blobs store initialized with minimal configuration"
-              );
-              storeInitialized = true;
-            } catch (minimalError) {
-              console.error("Minimal configuration failed:", minimalError);
-              lastError = minimalError;
-            }
-          }
-
-          if (!storeInitialized) {
-            console.error("All Netlify Blobs configuration attempts failed");
-            console.error("Last error:", lastError);
-
-            // Check if this might be a Netlify Blobs availability issue
-            const errorMessage = lastError?.message || "Unknown error";
-            if (errorMessage.includes("not been configured")) {
-              return {
-                success: false,
-                fileName,
-                error: `Netlify Blobs is not enabled for this site. Please enable Netlify Blobs in your site settings at https://app.netlify.com/sites/${
-                  siteId || "your-site"
-                }/configuration/functions#blobs`,
-              };
-            }
-
-            return {
-              success: false,
-              fileName,
-              error: `File storage initialization failed: ${errorMessage}. This may indicate Netlify Blobs is not available or properly configured for this site.`,
-            };
-          }
         }
 
         try {
