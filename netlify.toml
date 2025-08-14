@@ -1,6 +1,8 @@
 [build]
   functions = "netlify/functions"
   publish = "public"
+  # Enable Netlify Blobs during build
+  command = "npm run enable-blobs"
 
 [functions]
   directory = "netlify/functions"
@@ -18,10 +20,16 @@
 # Explicitly enable Netlify Blobs
 [blobs]
   # This ensures Netlify Blobs is available for the site
+  # Netlify Blobs will be automatically enabled when this configuration is deployed
+
+# Enable specific Netlify features
+[functions]
+  # Enable Netlify Blobs for all functions
+  included_files = ["**/*"]
   
-# Enable Netlify Blobs for functions
 [functions.environment]
   # Ensure Netlify provides Blobs context automatically
+  NETLIFY_BLOBS_ENABLED = "true"
 
 [[headers]]
   for = "/.netlify/functions/*"
