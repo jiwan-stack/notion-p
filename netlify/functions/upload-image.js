@@ -155,46 +155,19 @@ export const handler = async (event) => {
         console.log(`Creating public URL for Notion: ${publicUrl}`);
 
         // Store the file in Netlify Blobs so our serve-blob function can access it
-        console.log("Environment check:", {
-          hasNetlifyContext: !!process.env.NETLIFY,
-          deployContext: process.env.CONTEXT,
-          siteId: process.env.NETLIFY_SITE_ID ? "present" : "missing",
-          deployId: process.env.DEPLOY_ID ? "present" : "missing",
-          url: process.env.URL || "not set",
-          deployUrl: process.env.DEPLOY_URL || "not set",
-        });
-
-        // Extract site ID from URL if not available in environment
-        let extractedSiteId = null;
-        const siteUrl = process.env.URL || process.env.DEPLOY_URL;
-        if (siteUrl && siteUrl.includes(".netlify.app")) {
-          // Extract site name from URL like https://notion-p.netlify.app
-          const match = siteUrl.match(/https?:\/\/([^.]+)\.netlify\.app/);
-          if (match) {
-            extractedSiteId = match[1];
-            console.log(
-              `Extracted site identifier from URL: ${extractedSiteId}`
-            );
-          }
-        }
-
+        // Since this was working before, use the simple approach
         let store;
         try {
-          // First try automatic configuration
           store = getStore("temp-uploads");
-          console.log(
-            "Netlify Blobs store initialized with automatic configuration"
-          );
+          console.log("Netlify Blobs store initialized successfully");
         } catch (storeError) {
-          console.log(
-            "Automatic Netlify Blobs configuration failed, trying manual setup..."
-          );
-
-          // Try manual configuration with available environment variables
-          const siteId =
-            process.env.NETLIFY_SITE_ID ||
-            process.env.SITE_ID ||
-            extractedSiteId;
+          console.error("Failed to initialize Netlify Blobs store:", storeError);
+          return {
+            success: false,
+            fileName,
+            error: `File storage initialization failed: ${storeError.message}. Please check that Netlify Blobs is still enabled for your site.`,
+          };
+        }
 
           // Check for various automatic Netlify tokens
           const token =
