@@ -155,21 +155,48 @@ export const handler = async (event) => {
         console.log(`Creating public URL for Notion: ${publicUrl}`);
 
         // Store the file in Netlify Blobs so our serve-blob function can access it
-        // Since this was working before, use the simple approach
+        // Automatic configuration with fallback
         let store;
         try {
+          // First try automatic configuration
           store = getStore("temp-uploads");
-          console.log("Netlify Blobs store initialized successfully");
+          console.log("Netlify Blobs store initialized successfully with automatic configuration");
         } catch (storeError) {
-          console.error(
-            "Failed to initialize Netlify Blobs store:",
-            storeError
-          );
-          return {
-            success: false,
-            fileName,
-            error: `File storage initialization failed: ${storeError.message}. Please check that Netlify Blobs is still enabled for your site.`,
-          };
+          console.log("Automatic configuration failed, trying with explicit site ID...");
+          
+          // Extract site ID from Netlify environment automatically
+          const siteId = process.env.NETLIFY_SITE_ID || 
+                        (process.env.URL && process.env.URL.includes('.netlify.app') 
+                          ? process.env.URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1] 
+                          : null) ||
+                        (process.env.DEPLOY_URL && process.env.DEPLOY_URL.includes('.netlify.app')
+                          ? process.env.DEPLOY_URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1]
+                          : null);
+          
+          console.log(`Extracted site ID: ${siteId ? 'found' : 'not found'}`);
+          console.log(`Available env vars: URL=${process.env.URL}, DEPLOY_URL=${process.env.DEPLOY_URL}, NETLIFY_SITE_ID=${process.env.NETLIFY_SITE_ID ? 'present' : 'missing'}`);
+          
+          if (siteId) {
+            try {
+              // Try with just siteID - Netlify should provide auth automatically
+              store = getStore("temp-uploads", { siteID: siteId });
+              console.log("Netlify Blobs store initialized with extracted site ID");
+            } catch (siteIdError) {
+              console.error("Site ID configuration also failed:", siteIdError);
+              return {
+                success: false,
+                fileName,
+                error: `File storage initialization failed: ${storeError.message}. Netlify Blobs may not be properly enabled for this site.`,
+              };
+            }
+          } else {
+            console.error("Could not extract site ID from environment");
+            return {
+              success: false,
+              fileName,
+              error: `File storage initialization failed: ${storeError.message}. Could not determine site configuration automatically.`,
+            };
+          }
         }
 
         try {

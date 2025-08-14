@@ -21,22 +21,53 @@ export const handler = async (event) => {
     };
   }
 
-    try {
+  try {
     // Netlify automatically provides blobs context in production
     // For local development, use netlify dev command
     let store;
     try {
+      // First try automatic configuration
       store = getStore("temp-uploads");
-      console.log("Netlify Blobs store initialized successfully for file serving");
+      console.log("Netlify Blobs store initialized successfully for file serving with automatic configuration");
     } catch (storeError) {
-      console.error("Failed to initialize Netlify Blobs store for serving:", storeError);
-      return {
-        statusCode: 500,
-        headers: corsHeaders,
-        body: JSON.stringify({
-          error: `File storage not available: ${storeError.message}. Please check that Netlify Blobs is enabled for your site.`,
-        }),
-      };
+      console.log("Automatic configuration failed for serve-blob, trying with explicit site ID...");
+      
+      // Extract site ID from Netlify environment automatically
+      const siteId = process.env.NETLIFY_SITE_ID || 
+                    (process.env.URL && process.env.URL.includes('.netlify.app') 
+                      ? process.env.URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1] 
+                      : null) ||
+                    (process.env.DEPLOY_URL && process.env.DEPLOY_URL.includes('.netlify.app')
+                      ? process.env.DEPLOY_URL.match(/https?:\/\/([^.]+)\.netlify\.app/)?.[1]
+                      : null);
+      
+      console.log(`Serve-blob extracted site ID: ${siteId ? 'found' : 'not found'}`);
+      
+      if (siteId) {
+        try {
+          // Try with just siteID - Netlify should provide auth automatically
+          store = getStore("temp-uploads", { siteID: siteId });
+          console.log("Netlify Blobs store initialized for serving with extracted site ID");
+        } catch (siteIdError) {
+          console.error("Site ID configuration also failed for serve-blob:", siteIdError);
+          return {
+            statusCode: 500,
+            headers: corsHeaders,
+            body: JSON.stringify({
+              error: `File storage not available: ${storeError.message}. Netlify Blobs may not be properly enabled for this site.`,
+            }),
+          };
+        }
+      } else {
+        console.error("Could not extract site ID from environment for serve-blob");
+        return {
+          statusCode: 500,
+          headers: corsHeaders,
+          body: JSON.stringify({
+            error: `File storage not available: ${storeError.message}. Could not determine site configuration automatically.`,
+          }),
+        };
+      }
     }
 
     // Extract filename from the path
