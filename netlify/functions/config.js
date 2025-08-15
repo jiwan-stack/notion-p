@@ -56,7 +56,7 @@ export const emailConfig = {
   // Footer text
   footer: {
     regards: "Best regards,",
-    team: "Service Team",
+    team: "Service Request Team",
     website: "Stackseekers.com",
     websiteUrl: "https://www.stackseekers.com",
   },
